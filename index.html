@@ -153,7 +153,7 @@ footer a{color:var(--sea)}
 
 <script src="photos.js"></script>
 <script>
-const VERSION = 'v1.8';
+const VERSION = 'v1.9';
 
 // ───── ポイントの特徴データ（ここを直すと判定が変わる） ─────
 // face   : 海岸が向いている方角（度。北0・東90・南180・西270）＝オフショアになる風の反対側
@@ -305,7 +305,7 @@ function judge(sp, h, level){
 const markHtml = m => m < 0 ? '<span class="m-d">危</span>' : `<span class="m-${m}">${MARKS[m]}</span>`;
 
 // ───── 仲間の実況（Googleの受け口）。このアドレスは秘密ではない。写真は管理人が公開にしたものだけ出る ─────
-let REPORT_URL = '';
+let REPORT_URL = 'https://script.google.com/macros/s/AKfycbzQIbHOfQb8zkS0tQXSEXk-XZUEzpiHmitdonOSuCQtbL-X3BH1msCgU3ZqpcguLIC3/exec';
 const SIZES = ['フラット', 'スネ', 'ヒザ', 'モモ', 'コシ', 'ハラ', 'ムネ', 'カタ', 'アタマ', 'アタマ以上'];
 let REPORTS = [];
 const todayJst = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
