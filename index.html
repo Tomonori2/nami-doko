@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>波どこ？ 伊良湖・静岡</title>
+<meta name="description" content="今日の風とうねりから、伊良湖・静岡のどのポイントが良さそうかを◎○△×で出す無料アプリ。">
+<meta name="theme-color" content="#0b6fa4">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{
+  --sea:#0b6fa4; --sea-dark:#084f76; --bg:#eef6fa; --card:#fff; --ink:#12303f; --sub:#5b7482;
+  --good:#0a8f5b; --ok:#2f7fd1; --so:#c98a00; --bad:#8a97a0; --danger:#d1322c; --line:#d6e4ec;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Hiragino Sans","Yu Gothic UI","Meiryo",sans-serif;font-size:16px;line-height:1.6}
+header{background:linear-gradient(160deg,var(--sea),var(--sea-dark));color:#fff;padding:14px 16px 12px}
+header h1{margin:0;font-size:24px;letter-spacing:.04em}
+header p{margin:2px 0 0;font-size:13px;opacity:.9}
+.ver{float:right;font-size:11px;background:rgba(255,255,255,.2);border-radius:10px;padding:1px 8px;margin-top:6px}
+main{max-width:560px;margin:0 auto;padding:12px 12px 40px}
+.row{display:flex;gap:6px;margin:0 0 10px;flex-wrap:wrap}
+.row .lbl{width:100%;font-size:12px;color:var(--sub);margin-bottom:-2px}
+.chip{flex:1;min-width:70px;border:2px solid var(--line);background:#fff;color:var(--ink);border-radius:12px;padding:9px 4px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit}
+.chip.on{background:var(--sea);border-color:var(--sea);color:#fff}
+.card{background:var(--card);border-radius:16px;padding:14px;margin:0 0 12px;box-shadow:0 1px 3px rgba(8,79,118,.12)}
+.card h2{margin:0 0 6px;font-size:16px}
+.warn{background:#fff1ef;border:2px solid var(--danger);color:#8a1c17}
+.warn h2{color:var(--danger)}
+.warn ul{margin:4px 0 0;padding-left:1.2em}
+.best{border:2px solid var(--sea)}
+.best .big{font-size:26px;font-weight:800;line-height:1.3}
+.best .why{margin:6px 0 0;font-size:14px}
+.spot{padding:12px 14px}
+.spot summary{list-style:none;cursor:pointer}
+.spot summary::-webkit-details-marker{display:none}
+.spot .head{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.spot .name{font-size:18px;font-weight:800}
+.spot .tag{font-size:11px;border-radius:8px;padding:1px 7px;background:#e3eef4;color:var(--sub)}
+.spot .tag.q{background:#fff3d6;color:#8a5a00}
+.slots{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
+.slot{border-radius:12px;background:#f3f8fb;text-align:center;padding:6px 2px}
+.slot.past{opacity:.4}
+.slot .t{font-size:11px;color:var(--sub)}
+.slot .m{font-size:26px;font-weight:800;line-height:1.2}
+.slot .s{font-size:11px}
+.m-3{color:var(--good)}.m-2{color:var(--ok)}.m-1{color:var(--so)}.m-0{color:var(--bad)}.m-d{color:var(--danger)}
+.more{font-size:12px;color:var(--sea);margin-top:6px}
+.detail{margin-top:10px;border-top:1px dashed var(--line);padding-top:8px;font-size:14px}
+.detail h3{font-size:13px;margin:10px 0 2px;color:var(--sub)}
+.detail ul{margin:0;padding-left:1.2em}
+.detail .ng{color:var(--danger);font-weight:700}
+.ans{display:flex;gap:6px;margin-top:4px}
+.ans button{flex:1;font-size:22px;font-weight:800;border:2px solid var(--line);background:#fff;border-radius:12px;padding:6px 0;cursor:pointer}
+.ans button.on{background:var(--sea);color:#fff;border-color:var(--sea)}
+.ph{margin:10px 0 0}
+.ph img{width:100%;height:auto;display:block;border-radius:12px;background:#dfeaf0}
+.ph figcaption{font-size:14px;margin-top:4px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:5px 4px;border-bottom:1px solid var(--line);text-align:center}
+th{font-size:12px;color:var(--sub);font-weight:600}
+.small{font-size:12px;color:var(--sub)}
+.btn{border:0;background:var(--sea);color:#fff;border-radius:12px;padding:10px 14px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn.ghost{background:#fff;color:var(--sea);border:2px solid var(--sea)}
+dl{margin:0}dt{font-weight:800;margin-top:8px}dd{margin:0;font-size:14px}
+footer{font-size:12px;color:var(--sub);text-align:center;padding:0 12px 30px}
+footer a{color:var(--sea)}
+</style>
+</head>
+<body>
+<header>
+  <span class="ver" id="ver"></span>
+  <h1>🌊 波どこ？</h1>
+  <p>伊良湖・静岡｜風とうねりから「どこが良さそうか」を出します</p>
+</header>
+<main>
+  <div class="row"><span class="lbl">あなたのレベル（判定が変わります）</span>
+    <button class="chip" data-level="0">はじめて〜初心者</button>
+    <button class="chip" data-level="1">中級</button>
+    <button class="chip" data-level="2">上級</button>
+  </div>
+  <div class="row">
+    <button class="chip" data-day="0">今日</button>
+    <button class="chip" data-day="1">明日</button>
+    <button class="chip" data-day="2">あさって</button>
+  </div>
+  <div class="row">
+    <button class="chip" data-area="all">ぜんぶ</button>
+    <button class="chip" data-area="irago">伊良湖</button>
+    <button class="chip" data-area="shizuoka">静岡</button>
+  </div>
+
+  <div id="status" class="card small">予測データを読みこんでいます…</div>
+  <div id="warn"></div>
+  <div id="best"></div>
+  <div id="spots"></div>
+  <div id="photos"></div>
+  <div id="sea"></div>
+  <div id="log"></div>
+
+  <div class="card">
+    <h2>ことばの意味</h2>
+    <dl>
+      <dt>オフショア</dt><dd>陸から海へ吹く風。波の面がきれいになる。強すぎると沖へ流されやすい。</dd>
+      <dt>オンショア</dt><dd>海から陸へ吹く風。波の面がザワザワして乗りにくい。</dd>
+      <dt>うねり</dt><dd>遠くの風や台風で生まれて届く波。向きが海岸に合うほど大きく入る。</dd>
+      <dt>周期</dt><dd>波と波の間の秒数。長いほど波に力があり、沖へ出る流れ（離岸流）も強くなる。</dd>
+    </dl>
+  </div>
+
+  <div class="card">
+    <h2>かならず読んでください</h2>
+    <ul style="margin:0;padding-left:1.2em;font-size:14px">
+      <li>ここの判定は<strong>沖の予測計算から出した目安</strong>です。現地の実況ではありません。</li>
+      <li>海に入るかどうかは、現地で波・流れ・人の多さを自分の目で見て決めてください。</li>
+      <li>迷ったら入らない。一人で入らない。注意報・警報が出ている日は入らない。</li>
+      <li>各ポイントのルールと、地元の方・先に入っている方を大切に。</li>
+    </ul>
+  </div>
+</main>
+<footer>
+  予報データ：<a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>（CC BY 4.0）｜実測の風・注意報：出典 <a href="https://www.jma.go.jp/" target="_blank" rel="noopener">気象庁</a><br>
+  記録はこのスマホの中だけに保存されます。
+</footer>
+
+<script src="photos.js"></script>
+<script>
+const VERSION = 'v1.5';
+
+// ───── ポイントの特徴データ（ここを直すと判定が変わる） ─────
+// face   : 海岸が向いている方角（度。北0・東90・南180・西270）＝オフショアになる風の反対側
+// sw     : 合ううねりの向きの範囲（[から, まで] 度）
+// gain   : 同じうねりでも小さめに入るポイントは1より小さく
+// wrap   : うねりの向きが合わなくても回りこんで入る最低の割合
+// shelter: 堤防などで弱まる風向き（[から, まで] 度）
+// tide   : 合う潮 low=引き潮 / high=満ち潮 / any=どちらでも
+// level  : 0=初心者から 1=中級から 2=上級むけ
+// sure   : false は特徴データがまだ不確か（画面に「要確認」と出す）
+// 合ううねり・合う風は波情報サイトの公開情報で裏取り(2026-10-03)。gainとlevelは推定＝答え合わせで直す
+const SPOTS = [
+  {id:'long',  name:'ロングビーチ', area:'irago',    w:0, s:0, face:160, sw:[112,203], gain:1,  wrap:.08, shelter:[],          tide:'any', level:0, sure:true, note:'南東〜南のうねり、北〜北西の風が合う。広い砂浜で場所を選びやすい。'},
+  {id:'loco',  name:'ロコ',         area:'irago',    w:0, s:0, face:160, sw:[112,203], gain:.8, wrap:.08, shelter:[[200,285]], tide:'any', level:1, sure:true, note:'赤羽根港の東側。堤防が西よりの風を弱める。堤防ぎわは沖へ出る流れに注意。'},
+  {id:'minato',name:'港（大松）',   area:'irago',    w:0, s:0, face:160, sw:[112,203], gain:.4, wrap:.08, shelter:[[200,285]], tide:'any', level:1, sure:true, note:'赤羽根港の西側。地形が決まると掘れた速い波。'},
+  {id:'zen',   name:'全日本',       area:'irago',    w:0, s:0, face:165, sw:[112,248], gain:.7, wrap:.08, shelter:[],          tide:'any', level:0, sure:true, note:'南東〜南西のうねり、北〜北西の風が合う。砂浜で波はやさしめ。'},
+  {id:'shin',  name:'新日本',       area:'irago',    w:0, s:0, face:160, sw:[67,203],  gain:1,  wrap:.08, shelter:[],          tide:'any', level:0, sure:true, note:'東・南東・南のうねり、北〜北西の風が合う。'},
+  {id:'sentan',name:'先端',         area:'irago',    w:0, s:0, face:265, sw:[112,203], gain:.6, wrap:.2,  shelter:[],          tide:'low', level:1, sure:true, note:'東風がオフショア。南東〜南のうねりと引き潮が合う。流れがあり、混みやすい。'},
+  {id:'omain', name:'御前崎メイン', area:'shizuoka', w:1, s:1, face:200, sw:[67,293],  gain:1,  wrap:.2,  shelter:[],          tide:'any', level:1, sure:true, note:'北〜北東の風が合う。うねりの向きは広く拾う。'},
+  {id:'melon', name:'御前崎メロン', area:'shizuoka', w:1, s:1, face:205, sw:[67,293],  gain:1,  wrap:.2,  shelter:[[60,120]],  tide:'any', level:1, sure:true, note:'北〜北東がオフショア。東風をかわせる。'},
+  {id:'shizu', name:'静波',         area:'shizuoka', w:2, s:1, face:155, sw:[67,203],  gain:.8, wrap:.08, shelter:[],          tide:'any', level:0, sure:true, note:'東〜南のうねり、北〜北西の風が合う。駿河湾の中で、ふだんは外海より小さめ。'},
+  {id:'kata',  name:'片浜',         area:'shizuoka', w:2, s:1, face:140, sw:[67,203],  gain:1,  wrap:.08, shelter:[],          tide:'any', level:1, sure:true, note:'東〜南のうねり、北〜西の風が合う。南東うねりで大きくなりやすい。'}
+];
+const WIND_PTS = [[34.59,137.08],[34.60,138.22],[34.74,138.23]];
+const SEA_PTS  = [[34.57,137.10],[34.58,138.25]];
+// 予報は1つのモデルに頼らず、複数の真ん中の値を使う（jma_msm＝気象庁の細かい予報）
+const WX_MODELS = ['jma_msm','jma_gsm','ecmwf_ifs025','gfs_seamless','icon_seamless'];
+const WAVE_MODELS = ['ecmwf_wam025','ncep_gfswave025','ncep_gfswave016','meteofrance_wave','gwam'];
+// 気象庁の実測（アメダス）と注意報・警報。2＝海に入らない級
+const JMA_PTS = [{area:'irago', amedas:'51346', obsName:'伊良湖', pref:'230000', city:'2323100', cityName:'田原市'},
+                 {area:'shizuoka', amedas:'50551', obsName:'御前崎', pref:'220000', city:'2222300', cityName:'御前崎市'}];
+const WARN = {'05':['暴風警報',2],'07':['波浪警報',2],'08':['高潮警報',2],'35':['暴風特別警報',2],'37':['波浪特別警報',2],'38':['高潮特別警報',2],
+              '14':['雷注意報',1],'15':['強風注意報',1],'16':['波浪注意報',1],'19':['高潮注意報',1],'20':['濃霧注意報',1]};
+let JMA = { obs:{}, warn:{} };
+const SLOTS = [6,9,12,15];
+// レベル別「ちょうどいい波の高さ(m)」 lo未満=小さすぎ a〜b=ちょうど hi超=危険
+const SIZE = [{lo:.3,a:.45,b:.9,hi:1.2},{lo:.4,a:.7,b:1.5,hi:2.0},{lo:.5,a:.9,b:2.0,hi:2.8}];
+const MARKS = ['×','△','○','◎'];
+const DIRS = ['北','北北東','北東','東北東','東','東南東','南東','南南東','南','南南西','南西','西南西','西','西北西','北西','北北西'];
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const load = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch(e) { return d; } };
+const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) {} };
+const dirName = d => DIRS[Math.round(d / 22.5) % 16];
+const angDiff = (a, b) => { const d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; };
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const inRange = (d, [a, b]) => a <= b ? (d >= a && d <= b) : (d >= a || d <= b);
+
+const state = { level: load('nd-level', 0), day: 0, area: load('nd-area', 'all') };
+let DATA = null;   // {t, wx:[...], sea:[...]}
+
+function sizeLabel(m){
+  if (m < .3) return 'ほぼ波なし';
+  if (m < .5) return 'ヒザ';
+  if (m < .7) return 'モモ〜腰';
+  if (m < 1.0) return '腰〜腹';
+  if (m < 1.3) return '胸';
+  if (m < 1.6) return '肩〜頭';
+  if (m < 2.2) return '頭オーバー';
+  return 'ダブル近い';
+}
+
+// 1つのポイント・1つの時刻の生データを集める
+function hourData(sp, idx){
+  const W = DATA.wx[sp.w].hourly, S = DATA.sea[sp.s].hourly;
+  const day = Math.floor(idx / 24), lv = S.sea_level_height_msl.slice(day * 24, day * 24 + 24).filter(v => v != null);
+  let tide = 'mid';
+  const cur = S.sea_level_height_msl[idx];
+  if (lv.length && cur != null) {
+    const mn = Math.min(...lv), mx = Math.max(...lv), p = (cur - mn) / ((mx - mn) || 1);
+    tide = p < .33 ? 'low' : p > .66 ? 'high' : 'mid';
+  }
+  return {
+    wind: W.wind_speed_10m[idx], windDir: W.wind_direction_10m[idx], gust: W.wind_gusts_10m[idx],
+    code: W.weather_code[idx], wave: S.wave_height[idx], waveDir: S.wave_direction[idx],
+    period: S.wave_period[idx] || 7, parts: S.parts[idx], tide
+  };
+}
+
+// 沖の波の高さ→岸でのサイズの倍率。周期が長いほど岸で大きくなる。短い風波は小さめ
+// （10/2 伊良湖の実況：うねり0.5m・7秒・南東で、新日本ヒザ〜モモ に合わせた。大きい日の検証はこれから）
+const kT = T => T < 6 ? clamp(.5 + ((T || 3) - 3) * .17, .4, 1) : clamp(1 + (T - 6) * .08, 1, 1.6);
+// 1つの波の成分（高さH・向きD・周期T）が、そのポイントでどれだけのサイズになるか
+function part(sp, H, D, T){
+  if (!H) return 0;
+  const out = inRange(D, sp.sw) ? 0 : Math.min(angDiff(D, sp.sw[0]), angDiff(D, sp.sw[1]));
+  const expo = out === 0 ? .75 + .25 * Math.max(0, Math.cos(angDiff(D, sp.face) * Math.PI / 180))
+                         : Math.max(sp.wrap, .75 * Math.cos(Math.min(out * 1.5, 90) * Math.PI / 180));
+  return H * kT(T) * expo;
+}
+
+// 判定の本体：点数(0〜1)と理由を返す
+function judge(sp, h, level){
+  const r = { reasons: [], dangers: [], cautions: [] };
+  // ① 岸での波の大きさの目安
+  // 10/2の実況（沖1m・東うねり6秒で伊良湖はヒザ〜コシ）に合わせて調整した換算
+  //   うねりと風波を別々に岸のサイズへ直して合わせる。これをモデルごとに行い、真ん中の値を使う
+  const faces = h.parts.map(p => Math.hypot(part(sp, p[0], p[1], p[2]), part(sp, p[3], p[4], p[5])) * sp.gain).sort((x, y) => x - y);
+  const raw = median(h.parts.map(p => Math.hypot((p[0] || 0) * kT(p[2]), (p[3] || 0) * kT(p[5]))));
+  r.face = median(faces); r.faceMin = faces[0]; r.faceMax = faces[faces.length - 1];
+  const expo = raw ? r.face / raw / sp.gain : 0;
+  const z = SIZE[level];
+  let sizeScore;
+  if (r.face < z.lo) sizeScore = .1;
+  else if (r.face < z.a) sizeScore = .4 + .6 * (r.face - z.lo) / (z.a - z.lo);
+  else if (r.face <= z.b) sizeScore = 1;
+  else if (r.face <= z.hi) sizeScore = 1 - .7 * (r.face - z.b) / (z.hi - z.b);
+  else { sizeScore = 0; r.dangers.push('あなたのレベルには波が大きすぎる'); }
+  const fit = expo > .8 ? 'うねりの向きが合う' : expo > .45 ? 'うねりは少しそれる' : 'うねりの向きが合わず小さくなる';
+  r.reasons.push(`サイズ目安：${sizeLabel(r.face)}（${fit}）`);
+  // ② 風
+  let ws = h.wind, sheltered = sp.shelter.some(rg => inRange(h.windDir, rg));
+  if (sheltered) ws *= .5;
+  const a = angDiff(h.windDir, sp.face);   // 0=海から吹く 180=陸から吹く
+  let type, windScore;
+  if (ws < 2) { type = 'ほぼ無風'; windScore = 1; }
+  else if (a >= 135) { type = ws >= 6 ? 'オフショア（強め）' : 'オフショア'; windScore = ws >= 11 ? .3 : ws >= 8 ? .55 : ws >= 6 ? .68 : 1; }
+  else if (a >= 100) { type = 'サイドオフ'; windScore = ws >= 8 ? .5 : .85; }
+  else if (a >= 70)  { type = 'サイド（横風）'; windScore = ws < 4 ? .7 : ws < 7 ? .45 : .25; }
+  else { type = 'オンショア'; windScore = ws < 3 ? .7 : ws < 5 ? .4 : ws < 8 ? .2 : .1; }
+  r.windType = type;
+  r.reasons.push(`風：${dirName(h.windDir)} ${h.wind.toFixed(0)}m＝${type}${sheltered ? '（堤防で弱まる）' : ''}`);
+  // ③ 潮
+  let tideMod = 1;
+  const tn = {low:'引いている', mid:'中くらい', high:'満ちている'}[h.tide];
+  if (sp.tide !== 'any') {
+    if (sp.tide === h.tide) { tideMod = 1.05; r.reasons.push(`潮：${tn}（このポイントに合う）`); }
+    else if (h.tide !== 'mid') { tideMod = .85; r.reasons.push(`潮：${tn}（このポイントには合いにくい）`); }
+  }
+  r.score = clamp(sizeScore * windScore * tideMod, 0, 1);
+  if (sp.level > level) { r.score = Math.min(r.score, .45); r.cautions.push('このポイントは中級者から'); }
+  if (!sp.sure) { r.score = Math.min(r.score, .65); r.cautions.push('このポイントの特徴データはまだ確かめていません'); }
+  // ④ 安全
+  if (h.gust >= 17 || h.wind >= 12) r.dangers.push('風が強すぎる');
+  if (h.code >= 95) r.dangers.push('雷の予報');
+  if (level === 0 && a >= 100 && ws >= 7) r.dangers.push('強いオフショアで沖へ流されやすい');
+  if (h.period >= 10 && h.wave >= 1.5) r.cautions.push('うねりに力があり、沖へ出る流れ（離岸流）が強い');
+  if (h.gust >= 13 && h.gust < 17) r.cautions.push('ときどき強い風が吹く');
+  r.mark = r.dangers.length ? -1 : r.score >= .7 ? 3 : r.score >= .5 ? 2 : r.score >= .3 ? 1 : 0;
+  return r;
+}
+const markHtml = m => m < 0 ? '<span class="m-d">危</span>' : `<span class="m-${m}">${MARKS[m]}</span>`;
+
+// 現地の写真（新しい順）。写真は撮った日時を必ず見せる＝今の様子と誤解させない
+function photosOf(ids){
+  const all = typeof PHOTOS === 'undefined' ? [] : PHOTOS;
+  return all.filter(p => ids.includes(p.spot)).sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+}
+function photoHtml(p, withSpot){
+  const sp = SPOTS.find(s => s.id === p.spot), [, m, d] = p.date.split('-');
+  return `<figure class="ph"><img loading="lazy" src="${esc(p.file)}" alt="${esc((sp ? sp.name : '') + ' ' + p.date + ' の写真')}">
+    <figcaption><strong>${+m}/${+d} ${esc(p.time || '')}</strong>${withSpot && sp ? '　' + esc(sp.name) : ''}${p.size ? '　実際：' + esc(p.size) : ''}${p.memo ? '<br>' + esc(p.memo) : ''}${p.by ? '<br><span class="small">撮影：' + esc(p.by) + '</span>' : ''}</figcaption></figure>`;
+}
+
+// 予報の確かさ：モデルどうしの差が小さいほど高い
+function conf(sp, idx){
+  const W = DATA.wx[sp.w].hourly, j = judge(sp, hourData(sp, idx), state.level);
+  const r = (j.faceMax - j.faceMin) / (j.face || 1), ws = W.wind_max[idx] - W.wind_min[idx];
+  const lab = r < .3 && ws < 3 ? '高い' : r < .6 && ws < 6 ? 'ふつう' : '低い（モデルで意見が割れている）';
+  const a = sizeLabel(j.faceMin), b = sizeLabel(j.faceMax);
+  return `予報の確かさ：${lab}｜サイズの幅 ${a === b ? a : a + ' 〜 ' + b}・風 ${W.wind_min[idx].toFixed(0)}〜${W.wind_max[idx].toFixed(0)}m`;
+}
+function alertLevel(area){ const w = JMA.warn[area]; return w ? Math.max(0, ...w.codes.map(c => WARN[c][1])) : 0; }
+
+function spotsNow(){ return SPOTS.filter(s => state.area === 'all' || s.area === state.area); }
+function dayLabel(d){ const dt = new Date(DATA.wx[0].hourly.time[d * 24]); return `${dt.getMonth() + 1}/${dt.getDate()}(${'日月火水木金土'[dt.getDay()]})`; }
+function dayKey(d){ return DATA.wx[0].hourly.time[d * 24].slice(0, 10); }
+function isPast(d, hr){ return d === 0 && new Date().getHours() > hr + 1; }
+
+function render(){
+  document.querySelectorAll('[data-level]').forEach(b => b.classList.toggle('on', +b.dataset.level === state.level));
+  document.querySelectorAll('[data-day]').forEach(b => b.classList.toggle('on', +b.dataset.day === state.day));
+  document.querySelectorAll('[data-area]').forEach(b => b.classList.toggle('on', b.dataset.area === state.area));
+  if (!DATA) return;
+  const d = state.day, list = spotsNow();
+  document.querySelectorAll('[data-day]').forEach(b => { const n = +b.dataset.day; b.textContent = ['今日','明日','あさって'][n] + ' ' + dayLabel(n); });
+
+  // 全ポイント×全時間帯を判定
+  const res = list.map(sp => ({ sp, slots: SLOTS.map(hr => {
+    const h = hourData(sp, d * 24 + hr), j = judge(sp, h, state.level);
+    if (d === 0 && alertLevel(sp.area) >= 2) { j.dangers.unshift('気象庁の警報が出ている'); j.mark = -1; }
+    return { hr, h, j };
+  }) }));
+
+  // 海ぜんたいの注意（気象庁の発表を先頭に）
+  const warns = new Set();
+  JMA_PTS.forEach(p => { const w = JMA.warn[p.area]; if (w && w.codes.length && list.some(s => s.area === p.area)) warns.add(`【気象庁】${p.cityName}に ${w.codes.map(c => WARN[c][0]).join('・')} が出ています`); });
+  [0, 1].forEach(si => {
+    if (!list.some(s => s.s === si)) return;
+    const S = DATA.sea[si].hourly, nm = ['伊良湖', '静岡'][si];
+    const mx = Math.max(...SLOTS.map(hr => S.wave_height[d * 24 + hr] || 0));
+    const pr = Math.max(...SLOTS.map(hr => S.wave_period[d * 24 + hr] || 0));
+    if (mx >= 2.5) warns.add(`${nm}：沖の波が ${mx.toFixed(1)}m。海が荒れています`);
+    else if (mx >= 1.8) warns.add(`${nm}：沖の波が ${mx.toFixed(1)}m。ふだんより大きい日です`);
+    if (pr >= 10 && mx >= 1.5) warns.add(`${nm}：周期 ${pr.toFixed(0)}秒の力のあるうねり。離岸流に注意`);
+  });
+  [0, 1, 2].forEach(wi => {
+    if (!list.some(s => s.w === wi)) return;
+    const g = Math.max(...SLOTS.map(hr => DATA.wx[wi].hourly.wind_gusts_10m[d * 24 + hr] || 0));
+    if (g >= 13) warns.add(`${['伊良湖', '御前崎', '静波'][wi]}：突風 ${g.toFixed(0)}m/s の予報`);
+  });
+  $('warn').innerHTML = warns.size ? `<div class="card warn"><h2>⚠ 入る前に</h2><ul>${[...warns].map(w => `<li>${esc(w)}</li>`).join('')}</ul><p class="small" style="margin:6px 0 0;color:inherit">注意報・警報は気象庁の発表を確認してください。迷ったら入らない。</p></div>` : '';
+
+  // いちばんのおすすめ
+  let best = null;
+  res.forEach(r => r.slots.forEach(s => { if (!isPast(d, s.hr) && s.j.mark >= 0 && (!best || s.j.score > best.s.j.score)) best = { r, s }; }));
+  if (!best || best.s.j.mark < 1) {
+    $('best').innerHTML = `<div class="card best"><h2>${dayLabel(d)} のおすすめ</h2><div class="big">見送りがおすすめ</div><p class="why">あなたのレベルに合う条件のポイントが見つかりませんでした。下の理由を見て、別の日を考えてみてください。</p></div>`;
+  } else {
+    const j = best.s.j;
+    $('best').innerHTML = `<div class="card best"><h2>${dayLabel(d)} のおすすめ</h2><div class="big">${markHtml(j.mark)} ${esc(best.r.sp.name)}　${best.s.hr}時ごろ</div><p class="why">${j.reasons.map(esc).join('<br>')}${j.cautions.length ? '<br><strong>注意：' + j.cautions.map(esc).join('・') + '</strong>' : ''}</p><p class="small" style="margin:6px 0 0">${esc(conf(best.r.sp, d * 24 + best.s.hr))}</p></div>`;
+  }
+
+  // ポイントごとのカード（良い順）
+  res.sort((a, b) => Math.max(...b.slots.map(s => s.j.mark < 0 ? -1 : s.j.score)) - Math.max(...a.slots.map(s => s.j.mark < 0 ? -1 : s.j.score)));
+  const logs = load('nd-log', {});
+  $('spots').innerHTML = res.map(({ sp, slots }) => {
+    const lg = logs[dayKey(d) + '|' + sp.id], ph = photosOf([sp.id]).slice(0, 3);
+    return `<details class="card spot"><summary>
+      <div class="head"><span class="name">${esc(sp.name)}</span><span class="tag">${sp.area === 'irago' ? '伊良湖' : '静岡'}</span>${sp.level ? '<span class="tag">中級から</span>' : '<span class="tag">初心者OK</span>'}${sp.sure ? '' : '<span class="tag q">特徴データ要確認</span>'}${ph.length ? '<span class="tag">📷 写真あり</span>' : ''}</div>
+      <div class="slots">${slots.map(s => `<div class="slot${isPast(d, s.hr) ? ' past' : ''}"><div class="t">${s.hr}時</div><div class="m">${markHtml(s.j.mark)}</div><div class="s">${esc(sizeLabel(s.j.face))}</div></div>`).join('')}</div>
+      <div class="more">▼ 理由を見る</div></summary>
+      <div class="detail"><p style="margin:0">${esc(sp.note)}</p>
+      ${slots.map(s => `<h3>${s.hr}時</h3><ul>${s.j.dangers.map(x => `<li class="ng">危険：${esc(x)}</li>`).join('')}${s.j.reasons.map(x => `<li>${esc(x)}</li>`).join('')}${s.j.cautions.map(x => `<li>注意：${esc(x)}</li>`).join('')}</ul>`).join('')}
+      ${ph.length ? '<h3>現地の写真（撮った日時に注意）</h3>' + ph.map(p => photoHtml(p, false)).join('') : ''}
+      ${d === 0 ? `<h3>実際はどうだった？（答え合わせ）</h3><div class="ans">${[3, 2, 1, 0].map(m => `<button data-ans="${m}" data-spot="${sp.id}" class="${lg && lg.actual === m ? 'on' : ''}">${MARKS[m]}</button>`).join('')}</div><p class="small" style="margin:4px 0 0">行った日に押すと、予想の当たり具合がたまっていきます。</p>` : ''}
+      </div></details>`;
+  }).join('');
+
+  const recent = photosOf(list.map(s => s.id)).slice(0, 6);
+  $('photos').innerHTML = recent.length ? `<div class="card"><h2>📷 現地の写真（新しい順）</h2><p class="small" style="margin:0">過去に撮った写真です。今の様子ではありません。</p>${recent.map(p => photoHtml(p, true)).join('')}</div>` : '';
+
+  renderSea(d, list);
+  renderLog();
+}
+
+function renderSea(d, list){
+  const areas = [];
+  if (list.some(s => s.s === 0)) areas.push({ nm: '伊良湖', si: 0, wi: 0 });
+  if (list.some(s => s.s === 1)) areas.push({ nm: '静岡（御前崎沖）', si: 1, wi: 1 });
+  $('sea').innerHTML = areas.map(a => {
+    const S = DATA.sea[a.si].hourly, W = DATA.wx[a.wi].hourly, D = DATA.wx[a.wi].daily;
+    // うねりの成分（風波をのぞいた分）。分けて出さないモデルしか無い時は全体の値
+    const sw = i => { const ps = S.parts[i].filter(p => p[0] > .05); return ps.length ? { h: median(ps.map(p => p[0])), d: circMean(ps.map(p => p[1])), t: median(ps.map(p => p[2])) } : { h: S.wave_height[i] || 0, d: S.wave_direction[i] || 0, t: S.wave_period[i] || 0 }; };
+    const rows = SLOTS.map(hr => { const i = d * 24 + hr; return `<tr><td>${hr}時</td><td>${(S.wave_height[i] ?? 0).toFixed(1)}m<br><span class="small">${S.wave_min[i].toFixed(1)}〜${S.wave_max[i].toFixed(1)}</span></td><td>${sw(i).t.toFixed(0)}秒</td><td>${esc(dirName(sw(i).d))}<br><span class="small">${sw(i).h.toFixed(1)}m</span></td><td>${esc(dirName(W.wind_direction_10m[i]))} ${W.wind_speed_10m[i].toFixed(0)}m<br><span class="small">${W.wind_min[i].toFixed(0)}〜${W.wind_max[i].toFixed(0)}</span></td></tr>`; }).join('');
+    const ob = JMA.obs[a.si === 0 ? 'irago' : 'shizuoka'];
+    // 潮の山と谷を探す
+    const lv = S.sea_level_height_msl.slice(d * 24, d * 24 + 24), hi = [], lo = [];
+    for (let i = 1; i < 23; i++) { if (lv[i] == null) continue; if (lv[i] > lv[i - 1] && lv[i] >= lv[i + 1]) hi.push(i); if (lv[i] < lv[i - 1] && lv[i] <= lv[i + 1]) lo.push(i); }
+    const tm = s => s ? s.slice(11, 16) : '-';
+    const cm = i => { const v = Math.round(lv[i] * 100); return (v > 0 ? '+' : '') + v + 'cm'; };
+    const wx = SLOTS.map(hr => { const i = d * 24 + hr, [ic, nm] = weather(W.weather_code[i]); return `<div class="slot"><div class="t">${hr}時</div><div class="m">${ic}</div><div class="s">${esc(nm)}<br>${W.temperature_2m[i].toFixed(0)}℃・雨${W.precipitation_probability[i] ?? '-'}%</div></div>`; }).join('');
+    const sst = S.sea_surface_temperature ? S.sea_surface_temperature[d * 24 + 12] : null;
+    const age = moonAge(new Date(DATA.wx[0].hourly.time[d * 24 + 12] + ':00+09:00'));
+    return `<div class="card"><h2>${esc(a.nm)} の天気と海（${dayLabel(d)}）</h2>
+      <div class="slots" style="margin:0 0 10px">${wx}</div>
+      ${ob ? `<p style="margin:0 0 8px;font-size:15px"><strong>いまの実測の風</strong>（気象庁 ${esc(ob.nm)} ${esc(ob.time)}）：${esc(ob.dir)} ${ob.wind.toFixed(1)}m</p>` : ''}
+      <table><tr><th>時刻</th><th>沖の波</th><th>うねり周期</th><th>うねり</th><th>風</th></tr>${rows}</table>
+      <p class="small" style="margin:6px 0 0">波と風は5つの予報モデルの真ん中の値。小さい字はモデルの幅（幅が広いほど外れやすい）。「沖の波」は風波もふくむ全体、「うねり」は遠くから届く波だけ。</p>
+      <h3 style="font-size:14px;margin:14px 0 2px">潮（${esc(tideName(age))}・月齢 ${age.toFixed(0)}）</h3>
+      ${tideSvg(lv, hi, lo, d === 0 ? new Date().getHours() + new Date().getMinutes() / 60 : null)}
+      <p style="margin:4px 0 0;font-size:14px">満潮：${hi.map(i => `${i}時ごろ（${cm(i)}）`).join('・') || '-'}<br>干潮：${lo.map(i => `${i}時ごろ（${cm(i)}）`).join('・') || '-'}</p>
+      <p class="small" style="margin:6px 0 0">潮の高さは「平均の海面」からの差。計算による目安です。<br>日の出 ${tm(D.sunrise[d])}　日の入り ${tm(D.sunset[d])}${sst != null ? `　海水温 ${sst.toFixed(0)}℃` : ''}</p></div>`;
+  }).join('');
+}
+
+function weather(c){
+  if (c === 0) return ['☀️', '晴れ'];
+  if (c <= 2) return ['🌤️', '晴れ時々くもり'];
+  if (c === 3) return ['☁️', 'くもり'];
+  if (c <= 48) return ['🌫️', '霧'];
+  if (c <= 67) return ['🌧️', '雨'];
+  if (c <= 77) return ['🌨️', '雪'];
+  if (c <= 82) return ['🌦️', 'にわか雨'];
+  if (c <= 86) return ['🌨️', 'にわか雪'];
+  return ['⛈️', '雷雨'];
+}
+// 月齢（新月からの日数）と、そこから決まる潮の名前の目安
+function moonAge(date){ const syn = 29.530588853; let a = ((date - Date.UTC(2000, 0, 6, 18, 14)) / 864e5) % syn; return a < 0 ? a + syn : a; }
+function tideName(age){
+  const n = Math.round(age) % 30;
+  if (n <= 2 || (n >= 14 && n <= 17) || n >= 29) return '大潮';
+  if (n === 10 || n === 25) return '長潮';
+  if (n === 11 || n === 26) return '若潮';
+  if ((n >= 7 && n <= 9) || (n >= 22 && n <= 24)) return '小潮';
+  return '中潮';
+}
+// 1日の潮の上がり下がりを線で描く（nowは今の時刻。今日だけ赤い線を出す）
+function tideSvg(lv, hi, lo, now){
+  const v = lv.filter(x => x != null); if (v.length < 24) return '';
+  const W = 320, H = 134, top = 20, bot = 96, mn = Math.min(...v), mx = Math.max(...v);
+  const x = i => 6 + i / 23 * (W - 12), y = t => top + (mx - t) / ((mx - mn) || 1) * (bot - top);
+  const pts = lv.map((t, i) => `${x(i).toFixed(1)},${y(t).toFixed(1)}`).join(' ');
+  const mark = (i, lab, col) => `<circle cx="${x(i)}" cy="${y(lv[i])}" r="4" fill="${col}"/><text x="${clamp(x(i), 26, W - 26)}" y="${lab === '満' ? y(lv[i]) - 8 : y(lv[i]) + 16}" text-anchor="middle" font-size="11" font-weight="700" fill="${col}">${lab} ${i}時</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" role="img" aria-label="潮の上がり下がりのグラフ">
+    <polygon points="${x(0)},${bot + 6} ${pts} ${x(23)},${bot + 6}" fill="#d7ecf7"/>
+    <polyline points="${pts}" fill="none" stroke="#0b6fa4" stroke-width="2.5"/>
+    ${SLOTS.map(h => `<line x1="${x(h)}" y1="${top - 6}" x2="${x(h)}" y2="${bot + 6}" stroke="#9db7c5" stroke-dasharray="3 3"/>`).join('')}
+    ${[0, 6, 12, 18].map(h => `<text x="${x(h)}" y="${H - 3}" text-anchor="${h ? 'middle' : 'start'}" font-size="10" fill="#5b7482">${h}時</text>`).join('')}
+    ${hi.map(i => mark(i, '満', '#084f76')).join('')}${lo.map(i => mark(i, '干', '#c98a00')).join('')}
+    ${now != null && now <= 23 ? `<line x1="${x(now)}" y1="${top - 6}" x2="${x(now)}" y2="${bot + 6}" stroke="#d1322c" stroke-width="2"/>` : ''}
+  </svg>`;
+}
+
+function renderLog(){
+  const logs = load('nd-log', {}), keys = Object.keys(logs).sort().reverse();
+  if (!keys.length) { $('log').innerHTML = ''; return; }
+  const hit = keys.filter(k => logs[k].pred === logs[k].actual).length, near = keys.filter(k => Math.abs(logs[k].pred - logs[k].actual) === 1).length;
+  const mk = m => m < 0 ? '危' : MARKS[m];
+  $('log').innerHTML = `<div class="card"><h2>答え合わせの記録</h2>
+    <p style="margin:0 0 6px">ぴったり <strong>${hit}</strong> 件・1段ちがい <strong>${near}</strong> 件（全 ${keys.length} 件）</p>
+    <table><tr><th>日</th><th>ポイント</th><th>予想</th><th>実際</th></tr>${keys.slice(0, 10).map(k => { const [day, id] = k.split('|'), sp = SPOTS.find(s => s.id === id); return `<tr><td>${esc(day.slice(5))}</td><td>${esc(sp ? sp.name : id)}</td><td>${mk(logs[k].pred)}</td><td>${mk(logs[k].actual)}</td></tr>`; }).join('')}</table>
+    <p style="margin:10px 0 0"><button class="btn ghost" id="clearLog">記録をぜんぶ消す</button></p></div>`;
+}
+
+// 答え合わせ：今の時刻にいちばん近い時間帯の予想と並べて保存
+function answer(spotId, actual){
+  const sp = SPOTS.find(s => s.id === spotId), now = new Date().getHours();
+  const hr = SLOTS.reduce((a, b) => Math.abs(b - now) < Math.abs(a - now) ? b : a);
+  const pred = judge(sp, hourData(sp, hr), state.level).mark;
+  const logs = load('nd-log', {}), key = dayKey(0) + '|' + spotId;
+  if (logs[key] && logs[key].actual === actual) delete logs[key]; else logs[key] = { pred, actual, hr, level: state.level };
+  save('nd-log', logs);
+  render();
+}
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.level != null) { state.level = +b.dataset.level; save('nd-level', state.level); render(); }
+  else if (b.dataset.day != null) { state.day = +b.dataset.day; render(); }
+  else if (b.dataset.area) { state.area = b.dataset.area; save('nd-area', state.area); render(); }
+  else if (b.dataset.ans != null) { e.preventDefault(); answer(b.dataset.spot, +b.dataset.ans); }
+  else if (b.id === 'clearLog') { if (confirm('答え合わせの記録をぜんぶ消します。よろしいですか？')) { save('nd-log', {}); render(); } }
+  else if (b.id === 'reload') { fetchData(true); }
+});
+
+// ───── 複数モデルを1つにまとめる ─────
+const median = a => { const s = [...a].sort((x, y) => x - y), n = s.length; return !n ? null : n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2; };
+const circMean = a => { let x = 0, y = 0; a.forEach(d => { x += Math.cos(d * Math.PI / 180); y += Math.sin(d * Math.PI / 180); }); return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360; };
+function mix(h, name, models, fn){ return h.time.map((_, i) => { const v = models.map(m => (h[name + '_' + m] || [])[i]).filter(x => x != null); return v.length ? fn(v) : null; }); }
+const first = v => v[0];
+const PART_VARS = ['swell_wave_height','swell_wave_direction','swell_wave_period','wind_wave_height','wind_wave_direction','wind_wave_period'];
+function mergeWx(loc){
+  const h = loc.hourly, M = WX_MODELS, dk = k => loc.daily[Object.keys(loc.daily).find(x => x.startsWith(k))];
+  return { hourly: { time: h.time,
+    temperature_2m: mix(h, 'temperature_2m', M, first), precipitation_probability: mix(h, 'precipitation_probability', M, v => Math.round(median(v))), weather_code: mix(h, 'weather_code', M, first),
+    wind_speed_10m: mix(h, 'wind_speed_10m', M, median), wind_min: mix(h, 'wind_speed_10m', M, v => Math.min(...v)), wind_max: mix(h, 'wind_speed_10m', M, v => Math.max(...v)),
+    wind_direction_10m: mix(h, 'wind_direction_10m', M, circMean), wind_gusts_10m: mix(h, 'wind_gusts_10m', M, median) },
+    daily: { sunrise: dk('sunrise'), sunset: dk('sunset') } };
+}
+function mergeSea(wv, lv){
+  const h = wv.hourly, M = WAVE_MODELS;
+  return { hourly: { time: h.time,
+    wave_height: mix(h, 'wave_height', M, median), wave_min: mix(h, 'wave_height', M, v => Math.min(...v)), wave_max: mix(h, 'wave_height', M, v => Math.max(...v)),
+    wave_direction: mix(h, 'wave_direction', M, circMean), wave_period: mix(h, 'wave_period', M, median),
+    // モデルごとの [うねり高さ, 向き, 周期, 風波高さ, 向き, 周期]。うねりと風波を分けて出すモデルだけ
+    parts: h.time.map((_, i) => M.map(m => PART_VARS.map(v => (h[v + '_' + m] || [])[i])).filter(p => p[0] != null || p[3] != null).map(p => p.map(x => x == null ? 0 : Math.round(x * 100) / 100))),
+    sea_level_height_msl: lv.hourly.sea_level_height_msl, sea_surface_temperature: lv.hourly.sea_surface_temperature } };
+}
+
+// 気象庁：いまの実測の風と、注意報・警報。取れなくてもアプリは動く
+async function fetchJma(){
+  const J = 'https://www.jma.go.jp/bosai/';
+  try {
+    const lt = await fetch(J + 'amedas/data/latest_time.txt', { cache: 'no-store' }).then(r => r.text());
+    const j = new Date(new Date(lt).getTime() + 9 * 3600e3), ymd = j.toISOString().slice(0, 10).replace(/-/g, ''), hh = String(Math.floor(j.getUTCHours() / 3) * 3).padStart(2, '0');
+    await Promise.all(JMA_PTS.map(async p => {
+      const o = await fetch(`${J}amedas/data/point/${p.amedas}/${ymd}_${hh}.json`).then(r => r.json()), ks = Object.keys(o).sort(), k = ks[ks.length - 1], v = o[k];
+      if (v && v.wind && v.wind[0] != null) JMA.obs[p.area] = { nm: p.obsName, time: k.slice(8, 10) + ':' + k.slice(10, 12), wind: v.wind[0], dir: v.windDirection && v.windDirection[0] ? DIRS[v.windDirection[0] % 16] : '風向なし' };
+    }));
+  } catch (e) {}
+  try {
+    await Promise.all(JMA_PTS.map(async p => {
+      const w = await fetch(`${J}warning/data/warning/${p.pref}.json`, { cache: 'no-store' }).then(r => r.json());
+      if (Date.now() - new Date(w.reportDatetime) > 3 * 864e5) return;   // 古すぎる発表は信用しない
+      const codes = new Set();
+      (w.areaTypes || []).forEach(t => t.areas.forEach(a => { if (a.code === p.city) (a.warnings || []).forEach(x => { if (WARN[x.code] && x.status !== '解除') codes.add(x.code); }); }));
+      JMA.warn[p.area] = { codes: [...codes] };
+    }));
+  } catch (e) {}
+  render();
+}
+
+async function fetchData(force){
+  fetchJma();
+  const cached = load('nd-data4', null);
+  if (cached && !force && Date.now() - cached.t < 30 * 60 * 1000) { DATA = cached; showStatus(); render(); return; }
+  const lat = p => p.map(x => x[0]).join(','), lon = p => p.map(x => x[1]).join(','), tz = '&timezone=Asia%2FTokyo&forecast_days=3';
+  const wxUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat(WIND_PTS)}&longitude=${lon(WIND_PTS)}&hourly=temperature_2m,precipitation_probability,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m&daily=sunrise,sunset&wind_speed_unit=ms&models=${WX_MODELS.join(',')}${tz}`;
+  const waveUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${lat(SEA_PTS)}&longitude=${lon(SEA_PTS)}&hourly=wave_height,wave_direction,wave_period,${PART_VARS.join(',')}&models=${WAVE_MODELS.join(',')}${tz}`;
+  const seaUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${lat(SEA_PTS)}&longitude=${lon(SEA_PTS)}&hourly=sea_level_height_msl,sea_surface_temperature${tz}`;
+  try {
+    const [wx, wave, sea] = await Promise.all([wxUrl, waveUrl, seaUrl].map(u => fetch(u).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })));
+    DATA = { t: Date.now(), wx: wx.map(mergeWx), sea: wave.map((w, i) => mergeSea(w, sea[i])) };
+    save('nd-data4', DATA);
+    showStatus();
+  } catch (err) {
+    if (cached) { DATA = cached; showStatus('電波がなく、新しい予測を取れませんでした。前に取ったデータを表示しています。'); }
+    else { $('status').innerHTML = '予測データを取れませんでした。電波のある場所で <button class="btn" id="reload">もう一度</button>'; return; }
+  }
+  render();
+}
+function showStatus(msg){
+  const t = new Date(DATA.t), old = DATA.wx[0].hourly.time[0].slice(0, 10) !== new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+  $('status').innerHTML = `${msg ? esc(msg) + '<br>' : ''}予測の取得：${t.getMonth() + 1}/${t.getDate()} ${t.getHours()}:${String(t.getMinutes()).padStart(2, '0')}${old ? '（古いデータです）' : ''}　<button class="btn ghost" id="reload" style="padding:4px 10px;font-size:13px">更新</button>`;
+}
+
+$('ver').textContent = VERSION;
+render();
+fetchData(false);
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
+</body>
+</html>
