@@ -56,7 +56,7 @@ main{max-width:560px;margin:0 auto;padding:12px 12px 40px}
 .ans button{flex:1;font-size:22px;font-weight:800;border:2px solid var(--line);background:#fff;border-radius:12px;padding:6px 0;cursor:pointer}
 .ans button.on{background:var(--sea);color:#fff;border-color:var(--sea)}
 .form label{display:block;font-size:14px;font-weight:700;margin:10px 0 0}
-.form input[type=text],.form input[type=time],.form input[type=password],.form select,.form input[type=file]{display:block;width:100%;margin-top:3px;padding:10px;font-size:16px;border:2px solid var(--line);border-radius:10px;background:#fff;font-family:inherit}
+.form input[type=text],.form input[type=time],.form select,.form input[type=file]{display:block;width:100%;margin-top:3px;padding:10px;font-size:16px;border:2px solid var(--line);border-radius:10px;background:#fff;font-family:inherit}
 .form .chk{font-weight:400;display:flex;gap:8px;align-items:flex-start}
 .form .chk input{width:22px;height:22px;flex:none;margin-top:2px}
 .form .btn{width:100%;margin-top:14px;padding:13px}
@@ -121,7 +121,6 @@ footer a{color:var(--sea)}
       <label>名前（ニックネーム）<input type="text" id="fBy" maxlength="12" required></label>
       <label>写真（なくてもOK）<input type="file" id="fPhoto" accept="image/*"></label>
       <label class="chk"><input type="checkbox" id="fOk"> 写真は、写っている人の了解があり、公開してよいものです</label>
-      <label>合言葉<input type="password" id="fPass" required autocomplete="off"></label>
       <button class="btn" type="submit" id="fSend">送る</button>
       <p id="fMsg" style="margin:8px 0 0;font-weight:700"></p>
     </form>
@@ -154,7 +153,7 @@ footer a{color:var(--sea)}
 
 <script src="photos.js"></script>
 <script>
-const VERSION = 'v1.7';
+const VERSION = 'v1.8';
 
 // ───── ポイントの特徴データ（ここを直すと判定が変わる） ─────
 // face   : 海岸が向いている方角（度。北0・東90・南180・西270）＝オフショアになる風の反対側
@@ -305,7 +304,7 @@ function judge(sp, h, level){
 }
 const markHtml = m => m < 0 ? '<span class="m-d">危</span>' : `<span class="m-${m}">${MARKS[m]}</span>`;
 
-// ───── 仲間の実況（Googleの受け口）。このアドレスは秘密ではない。合言葉がないと送れない ─────
+// ───── 仲間の実況（Googleの受け口）。このアドレスは秘密ではない。写真は管理人が公開にしたものだけ出る ─────
 let REPORT_URL = '';
 const SIZES = ['フラット', 'スネ', 'ヒザ', 'モモ', 'コシ', 'ハラ', 'ムネ', 'カタ', 'アタマ', 'アタマ以上'];
 let REPORTS = [];
@@ -343,7 +342,7 @@ function initForm(){
   $('fSpot').innerHTML = SPOTS.map(s => `<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('');
   $('fSize').innerHTML = SIZES.map((s, i) => `<option value="${i}"${i === 4 ? ' selected' : ''}>${esc(s)}</option>`).join('');
   const n = new Date(); $('fTime').value = String(n.getHours()).padStart(2, '0') + ':' + String(n.getMinutes()).padStart(2, '0');
-  $('fBy').value = load('nd-by', ''); $('fPass').value = load('nd-pass', '');
+  $('fBy').value = load('nd-by', '');
   $('sendForm').addEventListener('submit', async e => {
     e.preventDefault();
     const msg = $('fMsg'), btn = $('fSend'), file = $('fPhoto').files[0];
@@ -353,15 +352,15 @@ function initForm(){
       const sp = SPOTS.find(s => s.id === $('fSpot').value), time = $('fTime').value;
       let pred = {};   // その時刻のアプリの予想もいっしょに送る＝あとで答え合わせに使う（中級の基準でそろえる）
       if (DATA) { const j = judge(sp, hourData(sp, clamp(+time.slice(0, 2), 0, 23)), 1); pred = { mark: j.mark, face: j.face }; }
-      const body = { pass: $('fPass').value, spot: sp.id, date: todayJst(), time, size: +$('fSize').value, cond: +$('fCond').value, memo: $('fMemo').value, by: $('fBy').value, pred, ver: VERSION, img: file ? await shrink(file) : '' };
+      const body = { spot: sp.id, date: todayJst(), time, size: +$('fSize').value, cond: +$('fCond').value, memo: $('fMemo').value, by: $('fBy').value, pred, ver: VERSION, img: file ? await shrink(file) : '' };
       const res = await fetch(REPORT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) }).then(r => r.json());
       if (!res.ok) throw new Error(res.err);
-      save('nd-by', body.by); save('nd-pass', body.pass);
+      save('nd-by', body.by);
       msg.textContent = file ? '送りました。ありがとう！写真は確認のあと載ります。' : '送りました。ありがとう！';
       $('fMemo').value = ''; $('fPhoto').value = ''; $('fOk').checked = false;
       fetchReports();
     } catch (err) {
-      msg.textContent = { pass: '合言葉がちがいます。', limit: '今日の受付がいっぱいです。', image: '写真が大きすぎるか、読めませんでした。別の写真でためしてください。' }[err.message] || '送れませんでした。電波のある場所でもう一度ためしてください。';
+      msg.textContent = { limit: '今日の受付がいっぱいです。', image: '写真が大きすぎるか、読めませんでした。別の写真でためしてください。' }[err.message] || '送れませんでした。電波のある場所でもう一度ためしてください。';
     }
     btn.disabled = false;
   });

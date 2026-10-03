@@ -1,24 +1,18 @@
 // 波どこ？ 実況と写真の受け口
 // アプリから送られた「どのポイント・何時・サイズ・ひとこと・写真」を、このスプレッドシートに1行ずつ記録する。
 // 文字の実況はすぐアプリに出る。写真は「写真の公開」の列を自分で「公開」に変えたものだけ出る。
-// 合言葉は「設定」シートのB1に書く（このプログラムの中には書かない）。
+// 合言葉は無し（誰でも送れる）。そのかわり写真は確認してから載せ、1日の件数に上限をつける。
 
 const SHEET = '実況';
-const SETTING = '設定';
 const SPOTS = ['long', 'loco', 'minato', 'zen', 'shin', 'sentan', 'omain', 'melon', 'shizu', 'kata'];
 const HEAD = ['受けた日時', '写真の公開', '日', '時刻', 'ポイント', 'サイズ', '乗りやすさ', 'ひとこと', '名前', '写真ID', '予想の印', '予想のサイズm', '版'];
-const MAX_PER_DAY = 60;        // 1日に受ける件数の上限（いたずら対策）
+const MAX_PER_DAY = 30;        // 1日に受ける件数の上限（いたずら対策）
 const MAX_IMG_CHARS = 1500000; // 写真の大きさの上限（約1MB）
 
 // 最初に1回だけ、エディタの「実行」で動かす。シートと写真フォルダを作り、必要な許可をまとめて取る
 function setup() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   if (!ss.getSheetByName(SHEET)) ss.insertSheet(SHEET).appendRow(HEAD);
-  if (!ss.getSheetByName(SETTING)) {
-    const st = ss.insertSheet(SETTING);
-    st.getRange('A1:B1').setValues([['合言葉', '']]);
-    st.getRange('A2').setValue('↑ B1に、仲間だけに教える合言葉を入れる（空のままだと誰も送れません）');
-  }
   folder_();
 }
 
@@ -42,8 +36,6 @@ function doPost(e) {
   let d;
   try { d = JSON.parse(e.postData.contents); } catch (err) { return json_({ ok: false, err: 'format' }); }
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const pass = String(ss.getSheetByName(SETTING).getRange('B1').getValue()).trim();
-  if (!pass || String(d.pass || '').trim() !== pass) return json_({ ok: false, err: 'pass' });
   if (SPOTS.indexOf(d.spot) < 0 || !/^\d{4}-\d{2}-\d{2}$/.test(d.date) || !/^\d{2}:\d{2}$/.test(d.time)) return json_({ ok: false, err: 'format' });
   const img = typeof d.img === 'string' ? d.img : '';
   if (img.length > MAX_IMG_CHARS || (img && !/^[A-Za-z0-9+/=]+$/.test(img))) return json_({ ok: false, err: 'image' });
