@@ -127,7 +127,7 @@ footer a{color:var(--sea)}
 
 <script src="photos.js"></script>
 <script>
-const VERSION = 'v1.5';
+const VERSION = 'v1.6';
 
 // ───── ポイントの特徴データ（ここを直すと判定が変わる） ─────
 // face   : 海岸が向いている方角（度。北0・東90・南180・西270）＝オフショアになる風の反対側
@@ -139,12 +139,13 @@ const VERSION = 'v1.5';
 // level  : 0=初心者から 1=中級から 2=上級むけ
 // sure   : false は特徴データがまだ不確か（画面に「要確認」と出す）
 // 合ううねり・合う風は波情報サイトの公開情報で裏取り(2026-10-03)。gainとlevelは推定＝答え合わせで直す
+// 10/4の実況（東南東うねりでロング ハラ〜ムネ＞新日本 コシ〜ハラ）でロングと新日本のswを直した
 const SPOTS = [
-  {id:'long',  name:'ロングビーチ', area:'irago',    w:0, s:0, face:160, sw:[112,203], gain:1,  wrap:.08, shelter:[],          tide:'any', level:0, sure:true, note:'南東〜南のうねり、北〜北西の風が合う。広い砂浜で場所を選びやすい。'},
+  {id:'long',  name:'ロングビーチ', area:'irago',    w:0, s:0, face:160, sw:[100,203], gain:1,  wrap:.08, shelter:[],          tide:'any', level:0, sure:true, note:'南東〜南のうねり、北〜北西の風が合う。東よりのうねりもよく拾う（10/4の実況）。広い砂浜で場所を選びやすい。'},
   {id:'loco',  name:'ロコ',         area:'irago',    w:0, s:0, face:160, sw:[112,203], gain:.8, wrap:.08, shelter:[[200,285]], tide:'any', level:1, sure:true, note:'赤羽根港の東側。堤防が西よりの風を弱める。堤防ぎわは沖へ出る流れに注意。'},
   {id:'minato',name:'港（大松）',   area:'irago',    w:0, s:0, face:160, sw:[112,203], gain:.4, wrap:.08, shelter:[[200,285]], tide:'any', level:1, sure:true, note:'赤羽根港の西側。地形が決まると掘れた速い波。'},
   {id:'zen',   name:'全日本',       area:'irago',    w:0, s:0, face:165, sw:[112,248], gain:.7, wrap:.08, shelter:[],          tide:'any', level:0, sure:true, note:'南東〜南西のうねり、北〜北西の風が合う。砂浜で波はやさしめ。'},
-  {id:'shin',  name:'新日本',       area:'irago',    w:0, s:0, face:160, sw:[67,203],  gain:1,  wrap:.08, shelter:[],          tide:'any', level:0, sure:true, note:'東・南東・南のうねり、北〜北西の風が合う。'},
+  {id:'shin',  name:'新日本',       area:'irago',    w:0, s:0, face:160, sw:[130,203], gain:1,  wrap:.08, shelter:[],          tide:'any', level:0, sure:true, note:'南東〜南のうねり、北〜北西の風が合う。東よりのうねりはロングビーチより小さめ（10/4の実況）。'},
   {id:'sentan',name:'先端',         area:'irago',    w:0, s:0, face:265, sw:[112,203], gain:.6, wrap:.2,  shelter:[],          tide:'low', level:1, sure:true, note:'東風がオフショア。南東〜南のうねりと引き潮が合う。流れがあり、混みやすい。'},
   {id:'omain', name:'御前崎メイン', area:'shizuoka', w:1, s:1, face:200, sw:[67,293],  gain:1,  wrap:.2,  shelter:[],          tide:'any', level:1, sure:true, note:'北〜北東の風が合う。うねりの向きは広く拾う。'},
   {id:'melon', name:'御前崎メロン', area:'shizuoka', w:1, s:1, face:205, sw:[67,293],  gain:1,  wrap:.2,  shelter:[[60,120]],  tide:'any', level:1, sure:true, note:'北〜北東がオフショア。東風をかわせる。'},
@@ -208,16 +209,21 @@ function hourData(sp, idx){
   };
 }
 
-// 沖の波の高さ→岸でのサイズの倍率。周期が長いほど岸で大きくなる。短い風波は小さめ
-// （10/2 伊良湖の実況：うねり0.5m・7秒・南東で、新日本ヒザ〜モモ に合わせた。大きい日の検証はこれから）
-const kT = T => T < 6 ? clamp(.5 + ((T || 3) - 3) * .17, .4, 1) : clamp(1 + (T - 6) * .08, 1, 1.6);
+// 沖の波（高さH・周期T）が岸でくずれる時のサイズ。波が大きくなるほど伸びはゆるやかになる
+// （海岸工学の砕波の式 Hb∝(T×H²)^0.4 を、伊良湖の実況2日分に合わせた：
+//   10/2 うねり0.5m・7秒→ロング ヒザ〜モモ ／ 10/4 うねり1.6m・8〜9秒→ロング ハラ〜ムネ・新日本 コシ〜ハラ）
+// 周期6秒未満の風波は、岸で形になりにくいので小さめに見る
+const brk = (H, T) => !H || !T ? 0 : .40 * Math.pow(T * H * H, .4) * (T < 6 ? clamp((T - 3) / 3, .2, 1) : 1);
 // 1つの波の成分（高さH・向きD・周期T）が、そのポイントでどれだけのサイズになるか
 function part(sp, H, D, T){
-  if (!H) return 0;
-  const out = inRange(D, sp.sw) ? 0 : Math.min(angDiff(D, sp.sw[0]), angDiff(D, sp.sw[1]));
-  const expo = out === 0 ? .75 + .25 * Math.max(0, Math.cos(angDiff(D, sp.face) * Math.PI / 180))
-                         : Math.max(sp.wrap, .75 * Math.cos(Math.min(out * 1.5, 90) * Math.PI / 180));
-  return H * kT(T) * expo;
+  const inside = d => .75 + .25 * Math.max(0, Math.cos(angDiff(d, sp.face) * Math.PI / 180));
+  let expo;
+  if (inRange(D, sp.sw)) expo = inside(D);
+  else {   // 合う範囲から外れるほど急に小さくなる
+    const d0 = angDiff(D, sp.sw[0]), d1 = angDiff(D, sp.sw[1]), edge = d0 < d1 ? sp.sw[0] : sp.sw[1];
+    expo = Math.max(sp.wrap, inside(edge) * Math.cos(Math.min(Math.min(d0, d1) * 3, 90) * Math.PI / 180));
+  }
+  return brk(H, T) * expo;
 }
 
 // 判定の本体：点数(0〜1)と理由を返す
@@ -227,7 +233,7 @@ function judge(sp, h, level){
   // 10/2の実況（沖1m・東うねり6秒で伊良湖はヒザ〜コシ）に合わせて調整した換算
   //   うねりと風波を別々に岸のサイズへ直して合わせる。これをモデルごとに行い、真ん中の値を使う
   const faces = h.parts.map(p => Math.hypot(part(sp, p[0], p[1], p[2]), part(sp, p[3], p[4], p[5])) * sp.gain).sort((x, y) => x - y);
-  const raw = median(h.parts.map(p => Math.hypot((p[0] || 0) * kT(p[2]), (p[3] || 0) * kT(p[5]))));
+  const raw = median(h.parts.map(p => Math.hypot(brk(p[0], p[2]), brk(p[3], p[5]))));
   r.face = median(faces); r.faceMin = faces[0]; r.faceMax = faces[faces.length - 1];
   const expo = raw ? r.face / raw / sp.gain : 0;
   const z = SIZE[level];
