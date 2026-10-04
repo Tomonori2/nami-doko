@@ -1,6 +1,6 @@
 // 波どこ？ Service Worker（アプリを裏で支える小さなプログラム）
 // 画面の部品だけを保存する。予測データはアプリ側が端末に保存するので、ここでは触らない。
-const CACHE = 'nami-doko-v1.9';
+const CACHE = 'nami-doko-v1.10';
 const SHELL = ['./', 'index.html', 'photos.js', 'manifest.json', 'icon.svg', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {
