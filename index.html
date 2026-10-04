@@ -40,12 +40,12 @@ main{max-width:560px;margin:0 auto;padding:12px 12px 40px}
 .spot .name{font-size:18px;font-weight:800}
 .spot .tag{font-size:11px;border-radius:8px;padding:1px 7px;background:#e3eef4;color:var(--sub)}
 .spot .tag.q{background:#fff3d6;color:#8a5a00}
-.slots{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
+.slots{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:5px;margin-top:8px}
 .slot{border-radius:12px;background:#f3f8fb;text-align:center;padding:6px 2px}
 .slot.past{opacity:.4}
 .slot .t{font-size:11px;color:var(--sub)}
 .slot .m{font-size:26px;font-weight:800;line-height:1.2}
-.slot .s{font-size:11px}
+.slot .s{font-size:10.5px;line-height:1.35}
 .m-3{color:var(--good)}.m-2{color:var(--ok)}.m-1{color:var(--so)}.m-0{color:var(--bad)}.m-d{color:var(--danger)}
 .more{font-size:12px;color:var(--sea);margin-top:6px}
 .detail{margin-top:10px;border-top:1px dashed var(--line);padding-top:8px;font-size:14px}
@@ -60,6 +60,7 @@ main{max-width:560px;margin:0 auto;padding:12px 12px 40px}
 .form .chk{font-weight:400;display:flex;gap:8px;align-items:flex-start}
 .form .chk input{width:22px;height:22px;flex:none;margin-top:2px}
 .form .btn{width:100%;margin-top:14px;padding:13px}
+.cam{display:inline-block;margin:0 6px 6px 0;padding:8px 12px;border:2px solid var(--sea);border-radius:12px;color:var(--sea);font-weight:700;font-size:14px;text-decoration:none;background:#fff}
 .rep{border-top:1px solid var(--line);padding:8px 0;font-size:15px}
 .rep:first-of-type{border-top:0}
 .ph{margin:10px 0 0}
@@ -101,6 +102,7 @@ footer a{color:var(--sea)}
   </div>
 
   <div id="status" class="card small">予測データを読みこんでいます…</div>
+  <button class="btn" id="goSend" hidden style="width:100%;margin:0 0 12px;padding:13px;font-size:17px">📣 いまの海を送る（実況・写真）</button>
   <div id="warn"></div>
   <div id="best"></div>
   <div id="spots"></div>
@@ -154,7 +156,7 @@ footer a{color:var(--sea)}
 
 <script src="photos.js"></script>
 <script>
-const VERSION = 'v1.13';
+const VERSION = 'v1.14';
 
 // ───── ポイントの特徴データ（ここを直すと判定が変わる） ─────
 // face   : 海岸が向いている方角（度。北0・東90・南180・西270）＝オフショアになる風の反対側
@@ -185,7 +187,8 @@ const WIND_PTS = [[34.59,137.08],[34.60,138.22],[34.74,138.23],[34.74,136.87]];
 const WIND_NAMES = ['伊良湖', '御前崎', '静波', '内海'];
 const SEA_PTS  = [[34.57,137.10],[34.58,138.25],[34.73,136.85]];
 // 画面の地域わけ。si=波の予報の場所 wi=風と天気の場所
-const AREAS = [{id:'irago', tag:'伊良湖', nm:'伊良湖', si:0, wi:0}, {id:'shizuoka', tag:'静岡', nm:'静岡（御前崎沖）', si:1, wi:1}, {id:'chita', tag:'知多', nm:'知多（伊勢湾の中）', si:2, wi:3}];
+// cam＝その地域の無料ライブカメラをまとめた外部のページ（カメラは止まることがあるので、個別でなく一覧へ）
+const AREAS = [{id:'irago', tag:'伊良湖', nm:'伊良湖', si:0, wi:0, cam:'https://www.surfers-ocean.com/%E3%82%B5%E3%83%BC%E3%83%95%E3%82%A3%E3%83%B3%E6%B3%A2%E6%83%85%E5%A0%B1-%E7%84%A1%E6%96%99%E3%83%A9%E3%82%A4%E3%83%96%E3%82%AB%E3%83%A1%E3%83%A9/%E6%9D%B1%E6%B5%B7-%E9%81%A0%E5%B7%9E%E7%81%98/'}, {id:'shizuoka', tag:'静岡', nm:'静岡（御前崎沖）', si:1, wi:1, cam:'https://surftrip-japan.com/livecam-shizuoka/'}, {id:'chita', tag:'知多', nm:'知多（伊勢湾の中）', si:2, wi:3}];
 // 予報は1つのモデルに頼らず、複数の真ん中の値を使う（jma_msm＝気象庁の細かい予報）
 const WX_MODELS = ['jma_msm','jma_gsm','ecmwf_ifs025','gfs_seamless','icon_seamless'];
 const WAVE_MODELS = ['ecmwf_wam025','ncep_gfswave025','ncep_gfswave016','meteofrance_wave','gwam'];
@@ -193,10 +196,10 @@ const WAVE_MODELS = ['ecmwf_wam025','ncep_gfswave025','ncep_gfswave016','meteofr
 const JMA_PTS = [{area:'irago', amedas:'51346', obsName:'伊良湖', pref:'230000', city:'2323100', cityName:'田原市'},
                  {area:'shizuoka', amedas:'50551', obsName:'御前崎', pref:'220000', city:'2222300', cityName:'御前崎市'},
                  {area:'chita', amedas:'51311', obsName:'南知多', pref:'230000', city:'2344500', cityName:'南知多町'}];
-const WARN = {'05':['暴風警報',2],'07':['波浪警報',2],'08':['高潮警報',2],'35':['暴風特別警報',2],'37':['波浪特別警報',2],'38':['高潮特別警報',2],
+const WARN = {'05':['暴風警報',2],'07':['波浪警報',2],'08':['高潮警報',2],'48':['高潮危険警報',2],'35':['暴風特別警報',2],'37':['波浪特別警報',2],'38':['高潮特別警報',2],
               '14':['雷注意報',1],'15':['強風注意報',1],'16':['波浪注意報',1],'19':['高潮注意報',1],'20':['濃霧注意報',1]};
 let JMA = { obs:{}, warn:{} };
-const SLOTS = [6,9,12,15];
+const SLOTS = [6,9,12,15,17];
 // レベル別「ちょうどいい波の高さ(m)」 lo未満=小さすぎ a〜b=ちょうど hi超=危険
 const SIZE = [{lo:.3,a:.45,b:.9,hi:1.2},{lo:.4,a:.7,b:1.5,hi:2.0},{lo:.5,a:.9,b:2.0,hi:2.8}];
 const MARKS = ['×','△','○','◎'];
@@ -321,7 +324,7 @@ function repHtml(r, withSpot){
   return `<div class="rep"><strong>${+m}/${+d} ${esc(r.time)}</strong>${withSpot && sp ? '　' + esc(sp.name) : ''}　${esc(SIZES[r.size] || '')}　${esc(MARKS[r.cond] || '')}${r.memo ? '<br>' + esc(r.memo) : ''}<br><span class="small">${esc(r.by || '名前なし')}${r.hold ? '　📷 写真は確認待ち' : ''}</span></div>`;
 }
 async function fetchReports(){
-  $('sendCard').hidden = !REPORT_URL;
+  $('sendCard').hidden = $('goSend').hidden = !REPORT_URL;
   if (!REPORT_URL) return;
   try {
     const j = await fetch(REPORT_URL).then(r => r.json());
@@ -395,6 +398,14 @@ function conf(sp, idx){
 }
 function alertLevel(area){ const w = JMA.warn[area]; return w ? Math.max(0, ...w.codes.map(c => WARN[c][1])) : 0; }
 
+// その日に判定する時刻。日の入りの30分前より遅い時刻は出さない（暗い海に入らせない）
+function daySlots(d){ const ss = DATA.wx[0].daily.sunset[d], m = ss ? +ss.slice(11, 13) * 60 + +ss.slice(14, 16) : 1080; return SLOTS.filter(hr => hr * 60 + 30 <= m); }
+// ライブカメラは外部のページへ飛ぶだけ（画像は取りこまない）
+function camLinks(sp){
+  const a = AREAS.find(x => x.id === sp.area), q = encodeURIComponent(a.tag + ' ' + sp.name.replace(/（.*?）/, '') + ' サーフィン ライブカメラ');
+  return `<a class="cam" href="https://www.google.com/search?q=${q}" target="_blank" rel="noopener">📹 ${esc(sp.name)}のカメラをさがす</a>` + (a.cam ? `<a class="cam" href="${esc(a.cam)}" target="_blank" rel="noopener">📹 ${esc(a.tag)}のカメラ一覧</a>` : '');
+}
+
 function spotsNow(){ return SPOTS.filter(s => state.area === 'all' || s.area === state.area); }
 function dayLabel(d){ const dt = new Date(DATA.wx[0].hourly.time[d * 24]); return `${dt.getMonth() + 1}/${dt.getDate()}(${'日月火水木金土'[dt.getDay()]})`; }
 function dayKey(d){ return DATA.wx[0].hourly.time[d * 24].slice(0, 10); }
@@ -409,7 +420,7 @@ function render(){
   document.querySelectorAll('[data-day]').forEach(b => { const n = +b.dataset.day; b.textContent = ['今日','明日','あさって'][n] + ' ' + dayLabel(n); });
 
   // 全ポイント×全時間帯を判定
-  const res = list.map(sp => ({ sp, slots: SLOTS.map(hr => {
+  const res = list.map(sp => ({ sp, slots: daySlots(d).map(hr => {
     const h = hourData(sp, d * 24 + hr), j = judge(sp, h, state.level);
     if (d === 0 && alertLevel(sp.area) >= 2) { j.dangers.unshift('気象庁の警報が出ている'); j.mark = -1; }
     return { hr, h, j };
@@ -421,15 +432,15 @@ function render(){
   AREAS.forEach(({ si, tag: nm }) => {
     if (!list.some(s => s.s === si)) return;
     const S = DATA.sea[si].hourly;
-    const mx = Math.max(...SLOTS.map(hr => S.wave_height[d * 24 + hr] || 0));
-    const pr = Math.max(...SLOTS.map(hr => S.wave_period[d * 24 + hr] || 0));
+    const mx = Math.max(...daySlots(d).map(hr => S.wave_height[d * 24 + hr] || 0));
+    const pr = Math.max(...daySlots(d).map(hr => S.wave_period[d * 24 + hr] || 0));
     if (mx >= 2.5) warns.add(`${nm}：沖の波が ${mx.toFixed(1)}m。海が荒れています`);
     else if (mx >= 1.8) warns.add(`${nm}：沖の波が ${mx.toFixed(1)}m。ふだんより大きい日です`);
     if (pr >= 10 && mx >= 1.5) warns.add(`${nm}：周期 ${pr.toFixed(0)}秒の力のあるうねり。離岸流に注意`);
   });
   WIND_NAMES.forEach((_, wi) => {
     if (!list.some(s => s.w === wi)) return;
-    const g = Math.max(...SLOTS.map(hr => DATA.wx[wi].hourly.wind_gusts_10m[d * 24 + hr] || 0));
+    const g = Math.max(...daySlots(d).map(hr => DATA.wx[wi].hourly.wind_gusts_10m[d * 24 + hr] || 0));
     if (g >= 13) warns.add(`${WIND_NAMES[wi]}：突風 ${g.toFixed(0)}m/s の予報`);
   });
   $('warn').innerHTML = warns.size ? `<div class="card warn"><h2>⚠ 入る前に</h2><ul>${[...warns].map(w => `<li>${esc(w)}</li>`).join('')}</ul><p class="small" style="margin:6px 0 0;color:inherit">注意報・警報は気象庁の発表を確認してください。迷ったら入らない。</p></div>` : '';
@@ -454,6 +465,7 @@ function render(){
       <div class="slots">${slots.map(s => `<div class="slot${isPast(d, s.hr) ? ' past' : ''}"><div class="t">${s.hr}時</div><div class="m">${markHtml(s.j.mark)}</div><div class="s">${esc(sizeLabel(s.j.face))}</div></div>`).join('')}</div>
       <div class="more">▼ 理由を見る</div></summary>
       <div class="detail"><p style="margin:0">${esc(sp.note)}</p>
+      <p style="margin:8px 0 0">${camLinks(sp)}</p>
       ${slots.map(s => `<h3>${s.hr}時</h3><ul>${s.j.dangers.map(x => `<li class="ng">危険：${esc(x)}</li>`).join('')}${s.j.reasons.map(x => `<li>${esc(x)}</li>`).join('')}${s.j.cautions.map(x => `<li>注意：${esc(x)}</li>`).join('')}</ul>`).join('')}
       ${rp.length ? '<h3>みんなの実況（この日）</h3>' + rp.map(r => repHtml(r, false)).join('') : ''}
       ${ph.length ? '<h3>現地の写真（撮った日時に注意）</h3>' + ph.map(p => photoHtml(p, false)).join('') : ''}
@@ -476,14 +488,14 @@ function renderSea(d, list){
     const S = DATA.sea[a.si].hourly, W = DATA.wx[a.wi].hourly, D = DATA.wx[a.wi].daily;
     // うねりの成分（風波をのぞいた分）。分けて出さないモデルしか無い時は全体の値
     const sw = i => { const ps = S.parts[i].filter(p => p[0] > .05); return ps.length ? { h: median(ps.map(p => p[0])), d: circMean(ps.map(p => p[1])), t: median(ps.map(p => p[2])) } : { h: S.wave_height[i] || 0, d: S.wave_direction[i] || 0, t: S.wave_period[i] || 0 }; };
-    const rows = SLOTS.map(hr => { const i = d * 24 + hr; return `<tr><td>${hr}時</td><td>${(S.wave_height[i] ?? 0).toFixed(1)}m<br><span class="small">${S.wave_min[i].toFixed(1)}〜${S.wave_max[i].toFixed(1)}</span></td><td>${sw(i).t.toFixed(0)}秒</td><td>${esc(dirName(sw(i).d))}<br><span class="small">${sw(i).h.toFixed(1)}m</span></td><td>${esc(dirName(W.wind_direction_10m[i]))} ${W.wind_speed_10m[i].toFixed(0)}m<br><span class="small">${W.wind_min[i].toFixed(0)}〜${W.wind_max[i].toFixed(0)}</span></td></tr>`; }).join('');
+    const rows = daySlots(d).map(hr => { const i = d * 24 + hr; return `<tr><td>${hr}時</td><td>${(S.wave_height[i] ?? 0).toFixed(1)}m<br><span class="small">${S.wave_min[i].toFixed(1)}〜${S.wave_max[i].toFixed(1)}</span></td><td>${sw(i).t.toFixed(0)}秒</td><td>${esc(dirName(sw(i).d))}<br><span class="small">${sw(i).h.toFixed(1)}m</span></td><td>${esc(dirName(W.wind_direction_10m[i]))} ${W.wind_speed_10m[i].toFixed(0)}m<br><span class="small">${W.wind_min[i].toFixed(0)}〜${W.wind_max[i].toFixed(0)}</span></td></tr>`; }).join('');
     const ob = JMA.obs[a.id];
     // 潮の山と谷を探す
     const lv = S.sea_level_height_msl.slice(d * 24, d * 24 + 24), hi = [], lo = [];
     for (let i = 1; i < 23; i++) { if (lv[i] == null) continue; if (lv[i] > lv[i - 1] && lv[i] >= lv[i + 1]) hi.push(i); if (lv[i] < lv[i - 1] && lv[i] <= lv[i + 1]) lo.push(i); }
     const tm = s => s ? s.slice(11, 16) : '-';
     const cm = i => { const v = Math.round(lv[i] * 100); return (v > 0 ? '+' : '') + v + 'cm'; };
-    const wx = SLOTS.map(hr => { const i = d * 24 + hr, [ic, nm] = weather(W.weather_code[i]); return `<div class="slot"><div class="t">${hr}時</div><div class="m">${ic}</div><div class="s">${esc(nm)}<br>${W.temperature_2m[i].toFixed(0)}℃・雨${W.precipitation_probability[i] ?? '-'}%</div></div>`; }).join('');
+    const wx = daySlots(d).map(hr => { const i = d * 24 + hr, [ic, nm] = weather(W.weather_code[i]); return `<div class="slot"><div class="t">${hr}時</div><div class="m">${ic}</div><div class="s">${esc(nm)}<br>${W.temperature_2m[i].toFixed(0)}℃・雨${W.precipitation_probability[i] ?? '-'}%</div></div>`; }).join('');
     const sst = S.sea_surface_temperature ? S.sea_surface_temperature[d * 24 + 12] : null;
     const age = moonAge(new Date(DATA.wx[0].hourly.time[d * 24 + 12] + ':00+09:00'));
     return `<div class="card"><h2>${esc(a.nm)} の天気と海（${dayLabel(d)}）</h2>
@@ -566,6 +578,7 @@ document.addEventListener('click', e => {
   else if (b.dataset.ans != null) { e.preventDefault(); answer(b.dataset.spot, +b.dataset.ans); }
   else if (b.id === 'clearLog') { if (confirm('答え合わせの記録をぜんぶ消します。よろしいですか？')) { save('nd-log', {}); render(); } }
   else if (b.id === 'reload') { fetchData(true); }
+  else if (b.id === 'goSend') { const c = $('sendCard'); c.open = true; c.scrollIntoView({ behavior: 'smooth' }); }
 });
 
 // ───── 複数モデルを1つにまとめる ─────
@@ -605,10 +618,10 @@ async function fetchJma(){
   } catch (e) {}
   try {
     await Promise.all(JMA_PTS.map(async p => {
-      const w = await fetch(`${J}warning/data/warning/${p.pref}.json`, { cache: 'no-store' }).then(r => r.json());
-      if (Date.now() - new Date(w.reportDatetime) > 3 * 864e5) return;   // 古すぎる発表は信用しない
+      // 2026年の制度変更で置き場所が r8/ に変わった。種類（風・波・雷…）ごとの最新の発表が並んで入っている
+      const w = await fetch(`${J}warning/data/r8/${p.pref}.json`, { cache: 'no-store' }).then(r => r.json());
       const codes = new Set();
-      (w.areaTypes || []).forEach(t => t.areas.forEach(a => { if (a.code === p.city) (a.warnings || []).forEach(x => { if (WARN[x.code] && x.status !== '解除') codes.add(x.code); }); }));
+      (Array.isArray(w) ? w : []).forEach(r => ((r.warning || {}).class20Items || []).forEach(a => { if (a.areaCode === p.city) (a.kinds || []).forEach(x => { if (WARN[x.code] && x.status !== '解除') codes.add(x.code); }); }));
       JMA.warn[p.area] = { codes: [...codes] };
     }));
   } catch (e) {}
