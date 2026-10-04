@@ -80,7 +80,7 @@ footer a{color:var(--sea)}
 <header>
   <span class="ver" id="ver"></span>
   <h1>🌊 波どこ？</h1>
-  <p>伊良湖・静岡｜風とうねりから「どこが良さそうか」を出します</p>
+  <p>伊良湖・静岡・知多｜風とうねりから「どこが良さそうか」を出します</p>
 </header>
 <main>
   <div class="row"><span class="lbl">あなたのレベル（判定が変わります）</span>
@@ -97,6 +97,7 @@ footer a{color:var(--sea)}
     <button class="chip" data-area="all">ぜんぶ</button>
     <button class="chip" data-area="irago">伊良湖</button>
     <button class="chip" data-area="shizuoka">静岡</button>
+    <button class="chip" data-area="chita">知多</button>
   </div>
 
   <div id="status" class="card small">予測データを読みこんでいます…</div>
@@ -153,7 +154,7 @@ footer a{color:var(--sea)}
 
 <script src="photos.js"></script>
 <script>
-const VERSION = 'v1.10';
+const VERSION = 'v1.11';
 
 // ───── ポイントの特徴データ（ここを直すと判定が変わる） ─────
 // face   : 海岸が向いている方角（度。北0・東90・南180・西270）＝オフショアになる風の反対側
@@ -176,16 +177,22 @@ const SPOTS = [
   {id:'omain', name:'御前崎メイン', area:'shizuoka', w:1, s:1, face:200, sw:[67,293],  gain:1,  wrap:.2,  shelter:[],          tide:'any', level:1, sure:true, note:'北〜北東の風が合う。うねりの向きは広く拾う。'},
   {id:'melon', name:'御前崎メロン', area:'shizuoka', w:1, s:1, face:205, sw:[67,293],  gain:1,  wrap:.2,  shelter:[[60,120]],  tide:'any', level:1, sure:true, note:'北〜北東がオフショア。東風をかわせる。'},
   {id:'shizu', name:'静波',         area:'shizuoka', w:2, s:1, face:155, sw:[67,203],  gain:.8, wrap:.08, shelter:[],          tide:'any', level:0, sure:true, note:'東〜南のうねり、北〜北西の風が合う。駿河湾の中で、ふだんは外海より小さめ。'},
-  {id:'kata',  name:'片浜',         area:'shizuoka', w:2, s:1, face:140, sw:[67,203],  gain:1,  wrap:.08, shelter:[],          tide:'any', level:1, sure:true, note:'東〜南のうねり、北〜西の風が合う。南東うねりで大きくなりやすい。'}
+  {id:'kata',  name:'片浜',         area:'shizuoka', w:2, s:1, face:140, sw:[67,203],  gain:1,  wrap:.08, shelter:[],          tide:'any', level:1, sure:true, note:'東〜南のうねり、北〜西の風が合う。南東うねりで大きくなりやすい。'},
+  // 内海は伊勢湾の中。湾の中の波の予報は目が粗く当たりにくいので sure:false（実況で直す）
+  {id:'utsumi',name:'内海',        area:'chita',    w:3, s:2, face:225, sw:[160,290], gain:.8, wrap:.08, shelter:[],          tide:'any', level:0, sure:false, note:'伊勢湾の中。ふだんは波がなく、台風や強い低気圧のうねりが湾に入った時や、強い西風の時だけ立つ。北東の風が合う。遠浅で初心者向き。'}
 ];
-const WIND_PTS = [[34.59,137.08],[34.60,138.22],[34.74,138.23]];
-const SEA_PTS  = [[34.57,137.10],[34.58,138.25]];
+const WIND_PTS = [[34.59,137.08],[34.60,138.22],[34.74,138.23],[34.74,136.87]];
+const WIND_NAMES = ['伊良湖', '御前崎', '静波', '内海'];
+const SEA_PTS  = [[34.57,137.10],[34.58,138.25],[34.73,136.85]];
+// 画面の地域わけ。si=波の予報の場所 wi=風と天気の場所
+const AREAS = [{id:'irago', tag:'伊良湖', nm:'伊良湖', si:0, wi:0}, {id:'shizuoka', tag:'静岡', nm:'静岡（御前崎沖）', si:1, wi:1}, {id:'chita', tag:'知多', nm:'知多（伊勢湾の中）', si:2, wi:3}];
 // 予報は1つのモデルに頼らず、複数の真ん中の値を使う（jma_msm＝気象庁の細かい予報）
 const WX_MODELS = ['jma_msm','jma_gsm','ecmwf_ifs025','gfs_seamless','icon_seamless'];
 const WAVE_MODELS = ['ecmwf_wam025','ncep_gfswave025','ncep_gfswave016','meteofrance_wave','gwam'];
 // 気象庁の実測（アメダス）と注意報・警報。2＝海に入らない級
 const JMA_PTS = [{area:'irago', amedas:'51346', obsName:'伊良湖', pref:'230000', city:'2323100', cityName:'田原市'},
-                 {area:'shizuoka', amedas:'50551', obsName:'御前崎', pref:'220000', city:'2222300', cityName:'御前崎市'}];
+                 {area:'shizuoka', amedas:'50551', obsName:'御前崎', pref:'220000', city:'2222300', cityName:'御前崎市'},
+                 {area:'chita', amedas:'51311', obsName:'南知多', pref:'230000', city:'2344500', cityName:'南知多町'}];
 const WARN = {'05':['暴風警報',2],'07':['波浪警報',2],'08':['高潮警報',2],'35':['暴風特別警報',2],'37':['波浪特別警報',2],'38':['高潮特別警報',2],
               '14':['雷注意報',1],'15':['強風注意報',1],'16':['波浪注意報',1],'19':['高潮注意報',1],'20':['濃霧注意報',1]};
 let JMA = { obs:{}, warn:{} };
@@ -411,19 +418,19 @@ function render(){
   // 海ぜんたいの注意（気象庁の発表を先頭に）
   const warns = new Set();
   JMA_PTS.forEach(p => { const w = JMA.warn[p.area]; if (w && w.codes.length && list.some(s => s.area === p.area)) warns.add(`【気象庁】${p.cityName}に ${w.codes.map(c => WARN[c][0]).join('・')} が出ています`); });
-  [0, 1].forEach(si => {
+  AREAS.forEach(({ si, tag: nm }) => {
     if (!list.some(s => s.s === si)) return;
-    const S = DATA.sea[si].hourly, nm = ['伊良湖', '静岡'][si];
+    const S = DATA.sea[si].hourly;
     const mx = Math.max(...SLOTS.map(hr => S.wave_height[d * 24 + hr] || 0));
     const pr = Math.max(...SLOTS.map(hr => S.wave_period[d * 24 + hr] || 0));
     if (mx >= 2.5) warns.add(`${nm}：沖の波が ${mx.toFixed(1)}m。海が荒れています`);
     else if (mx >= 1.8) warns.add(`${nm}：沖の波が ${mx.toFixed(1)}m。ふだんより大きい日です`);
     if (pr >= 10 && mx >= 1.5) warns.add(`${nm}：周期 ${pr.toFixed(0)}秒の力のあるうねり。離岸流に注意`);
   });
-  [0, 1, 2].forEach(wi => {
+  WIND_NAMES.forEach((_, wi) => {
     if (!list.some(s => s.w === wi)) return;
     const g = Math.max(...SLOTS.map(hr => DATA.wx[wi].hourly.wind_gusts_10m[d * 24 + hr] || 0));
-    if (g >= 13) warns.add(`${['伊良湖', '御前崎', '静波'][wi]}：突風 ${g.toFixed(0)}m/s の予報`);
+    if (g >= 13) warns.add(`${WIND_NAMES[wi]}：突風 ${g.toFixed(0)}m/s の予報`);
   });
   $('warn').innerHTML = warns.size ? `<div class="card warn"><h2>⚠ 入る前に</h2><ul>${[...warns].map(w => `<li>${esc(w)}</li>`).join('')}</ul><p class="small" style="margin:6px 0 0;color:inherit">注意報・警報は気象庁の発表を確認してください。迷ったら入らない。</p></div>` : '';
 
@@ -443,7 +450,7 @@ function render(){
   $('spots').innerHTML = res.map(({ sp, slots }) => {
     const lg = logs[dayKey(d) + '|' + sp.id], ph = photosOf([sp.id]).slice(0, 3), rp = REPORTS.filter(r => r.spot === sp.id && r.date === dayKey(d));
     return `<details class="card spot"><summary>
-      <div class="head"><span class="name">${esc(sp.name)}</span><span class="tag">${sp.area === 'irago' ? '伊良湖' : '静岡'}</span>${sp.level ? '<span class="tag">中級から</span>' : '<span class="tag">初心者OK</span>'}${sp.sure ? '' : '<span class="tag q">特徴データ要確認</span>'}${rp.length ? `<span class="tag q">📣 実況 ${esc(SIZES[rp[0].size] || '')}（${esc(rp[0].time)}）</span>` : ''}${ph.length ? '<span class="tag">📷 写真あり</span>' : ''}</div>
+      <div class="head"><span class="name">${esc(sp.name)}</span><span class="tag">${esc(AREAS.find(a => a.id === sp.area).tag)}</span>${sp.level ? '<span class="tag">中級から</span>' : '<span class="tag">初心者OK</span>'}${sp.sure ? '' : '<span class="tag q">特徴データ要確認</span>'}${rp.length ? `<span class="tag q">📣 実況 ${esc(SIZES[rp[0].size] || '')}（${esc(rp[0].time)}）</span>` : ''}${ph.length ? '<span class="tag">📷 写真あり</span>' : ''}</div>
       <div class="slots">${slots.map(s => `<div class="slot${isPast(d, s.hr) ? ' past' : ''}"><div class="t">${s.hr}時</div><div class="m">${markHtml(s.j.mark)}</div><div class="s">${esc(sizeLabel(s.j.face))}</div></div>`).join('')}</div>
       <div class="more">▼ 理由を見る</div></summary>
       <div class="detail"><p style="margin:0">${esc(sp.note)}</p>
@@ -464,15 +471,13 @@ function render(){
 }
 
 function renderSea(d, list){
-  const areas = [];
-  if (list.some(s => s.s === 0)) areas.push({ nm: '伊良湖', si: 0, wi: 0 });
-  if (list.some(s => s.s === 1)) areas.push({ nm: '静岡（御前崎沖）', si: 1, wi: 1 });
+  const areas = AREAS.filter(a => list.some(s => s.area === a.id));
   $('sea').innerHTML = areas.map(a => {
     const S = DATA.sea[a.si].hourly, W = DATA.wx[a.wi].hourly, D = DATA.wx[a.wi].daily;
     // うねりの成分（風波をのぞいた分）。分けて出さないモデルしか無い時は全体の値
     const sw = i => { const ps = S.parts[i].filter(p => p[0] > .05); return ps.length ? { h: median(ps.map(p => p[0])), d: circMean(ps.map(p => p[1])), t: median(ps.map(p => p[2])) } : { h: S.wave_height[i] || 0, d: S.wave_direction[i] || 0, t: S.wave_period[i] || 0 }; };
     const rows = SLOTS.map(hr => { const i = d * 24 + hr; return `<tr><td>${hr}時</td><td>${(S.wave_height[i] ?? 0).toFixed(1)}m<br><span class="small">${S.wave_min[i].toFixed(1)}〜${S.wave_max[i].toFixed(1)}</span></td><td>${sw(i).t.toFixed(0)}秒</td><td>${esc(dirName(sw(i).d))}<br><span class="small">${sw(i).h.toFixed(1)}m</span></td><td>${esc(dirName(W.wind_direction_10m[i]))} ${W.wind_speed_10m[i].toFixed(0)}m<br><span class="small">${W.wind_min[i].toFixed(0)}〜${W.wind_max[i].toFixed(0)}</span></td></tr>`; }).join('');
-    const ob = JMA.obs[a.si === 0 ? 'irago' : 'shizuoka'];
+    const ob = JMA.obs[a.id];
     // 潮の山と谷を探す
     const lv = S.sea_level_height_msl.slice(d * 24, d * 24 + 24), hi = [], lo = [];
     for (let i = 1; i < 23; i++) { if (lv[i] == null) continue; if (lv[i] > lv[i - 1] && lv[i] >= lv[i + 1]) hi.push(i); if (lv[i] < lv[i - 1] && lv[i] <= lv[i + 1]) lo.push(i); }
@@ -612,7 +617,7 @@ async function fetchJma(){
 
 async function fetchData(force){
   fetchJma();
-  const cached = load('nd-data4', null);
+  const cached = load('nd-data5', null);
   if (cached && !force && Date.now() - cached.t < 30 * 60 * 1000) { DATA = cached; showStatus(); render(); return; }
   const lat = p => p.map(x => x[0]).join(','), lon = p => p.map(x => x[1]).join(','), tz = '&timezone=Asia%2FTokyo&forecast_days=3';
   const wxUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat(WIND_PTS)}&longitude=${lon(WIND_PTS)}&hourly=temperature_2m,precipitation_probability,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m&daily=sunrise,sunset&wind_speed_unit=ms&models=${WX_MODELS.join(',')}${tz}`;
@@ -621,7 +626,7 @@ async function fetchData(force){
   try {
     const [wx, wave, sea] = await Promise.all([wxUrl, waveUrl, seaUrl].map(u => fetch(u).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })));
     DATA = { t: Date.now(), wx: wx.map(mergeWx), sea: wave.map((w, i) => mergeSea(w, sea[i])) };
-    save('nd-data4', DATA);
+    save('nd-data5', DATA);
     showStatus();
   } catch (err) {
     if (cached) { DATA = cached; showStatus('電波がなく、新しい予測を取れませんでした。前に取ったデータを表示しています。'); }

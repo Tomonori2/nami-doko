@@ -4,7 +4,7 @@
 // 合言葉は無し（誰でも送れる）。そのかわり1日の件数に上限をつけ、変な写真はあとから隠せるようにしてある。
 
 const SHEET = '実況';
-const SPOTS = ['long', 'loco', 'minato', 'zen', 'shin', 'sentan', 'omain', 'melon', 'shizu', 'kata'];
+const SPOTS = ['long', 'loco', 'minato', 'zen', 'shin', 'sentan', 'omain', 'melon', 'shizu', 'kata', 'utsumi'];
 const HEAD = ['受けた日時', '写真の公開', '日', '時刻', 'ポイント', 'サイズ', '乗りやすさ', 'ひとこと', '名前', '写真ID', '予想の印', '予想のサイズm', '版'];
 const MAX_PER_DAY = 30;        // 1日に受ける件数の上限（いたずら対策）
 const MAX_IMG_CHARS = 1500000; // 写真の大きさの上限（約1MB）
