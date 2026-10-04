@@ -110,7 +110,7 @@ footer a{color:var(--sea)}
   <div id="log"></div>
 
   <details class="card" id="sendCard" hidden>
-    <summary style="cursor:pointer;font-size:17px;font-weight:800">📣 いまの海を送る（仲間用）</summary>
+    <summary style="cursor:pointer;font-size:17px;font-weight:800">📣 いまの海を送る</summary>
     <form id="sendForm" class="form">
       <p class="small" style="margin:8px 0">送った内容と写真は、すぐにこのアプリを開いた人みんなに見えます。顔や車のナンバーがはっきり写った写真は送らないでください。実況は予想を当てるための資料にもなります。</p>
       <label>ポイント<select id="fSpot" required></select></label>
@@ -154,7 +154,7 @@ footer a{color:var(--sea)}
 
 <script src="photos.js"></script>
 <script>
-const VERSION = 'v1.11';
+const VERSION = 'v1.12';
 
 // ───── ポイントの特徴データ（ここを直すと判定が変わる） ─────
 // face   : 海岸が向いている方角（度。北0・東90・南180・西270）＝オフショアになる風の反対側
@@ -311,7 +311,7 @@ function judge(sp, h, level){
 }
 const markHtml = m => m < 0 ? '<span class="m-d">危</span>' : `<span class="m-${m}">${MARKS[m]}</span>`;
 
-// ───── 仲間の実況（Googleの受け口）。このアドレスは秘密ではない。写真もすぐ出る（管理人があとから隠せる） ─────
+// ───── みんなの実況（Googleの受け口）。このアドレスは秘密ではない。写真もすぐ出る（管理人があとから隠せる） ─────
 let REPORT_URL = 'https://script.google.com/macros/s/AKfycbzQIbHOfQb8zkS0tQXSEXk-XZUEzpiHmitdonOSuCQtbL-X3BH1msCgU3ZqpcguLIC3/exec';
 const SIZES = ['フラット', 'スネ', 'ヒザ', 'モモ', 'コシ', 'ハラ', 'ムネ', 'カタ', 'アタマ', 'アタマ以上'];
 let REPORTS = [];
@@ -455,14 +455,14 @@ function render(){
       <div class="more">▼ 理由を見る</div></summary>
       <div class="detail"><p style="margin:0">${esc(sp.note)}</p>
       ${slots.map(s => `<h3>${s.hr}時</h3><ul>${s.j.dangers.map(x => `<li class="ng">危険：${esc(x)}</li>`).join('')}${s.j.reasons.map(x => `<li>${esc(x)}</li>`).join('')}${s.j.cautions.map(x => `<li>注意：${esc(x)}</li>`).join('')}</ul>`).join('')}
-      ${rp.length ? '<h3>仲間の実況（この日）</h3>' + rp.map(r => repHtml(r, false)).join('') : ''}
+      ${rp.length ? '<h3>みんなの実況（この日）</h3>' + rp.map(r => repHtml(r, false)).join('') : ''}
       ${ph.length ? '<h3>現地の写真（撮った日時に注意）</h3>' + ph.map(p => photoHtml(p, false)).join('') : ''}
       ${d === 0 ? `<h3>実際はどうだった？（答え合わせ）</h3><div class="ans">${[3, 2, 1, 0].map(m => `<button data-ans="${m}" data-spot="${sp.id}" class="${lg && lg.actual === m ? 'on' : ''}">${MARKS[m]}</button>`).join('')}</div><p class="small" style="margin:4px 0 0">行った日に押すと、予想の当たり具合がたまっていきます。</p>` : ''}
       </div></details>`;
   }).join('');
 
   const reps = REPORTS.filter(r => list.some(s => s.id === r.spot)).slice(0, 8);
-  $('reports').innerHTML = reps.length ? `<div class="card"><h2>📣 仲間の実況（新しい順）</h2>${reps.map(r => repHtml(r, true)).join('')}</div>` : '';
+  $('reports').innerHTML = reps.length ? `<div class="card"><h2>📣 みんなの実況（新しい順）</h2>${reps.map(r => repHtml(r, true)).join('')}</div>` : '';
   const recent = photosOf(list.map(s => s.id)).slice(0, 6);
   $('photos').innerHTML = recent.length ? `<div class="card"><h2>📷 現地の写真（新しい順）</h2><p class="small" style="margin:0">過去に撮った写真です。今の様子ではありません。</p>${recent.map(p => photoHtml(p, true)).join('')}</div>` : '';
 
