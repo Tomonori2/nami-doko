@@ -157,7 +157,7 @@ footer a{color:var(--sea)}
 
 <script src="photos.js"></script>
 <script>
-const VERSION = 'v1.16';
+const VERSION = 'v1.17';
 
 // ───── ポイントの特徴データ（ここを直すと判定が変わる） ─────
 // face   : 海岸が向いている方角（度。北0・東90・南180・西270）＝オフショアになる風の反対側
@@ -173,7 +173,6 @@ const VERSION = 'v1.16';
 const SPOTS = [
   {id:'long',  name:'ロングビーチ', area:'irago',    w:0, s:0, face:160, sw:[100,203], gain:1,  wrap:.08, shelter:[],          tide:'any', level:0, sure:true, note:'南東〜南のうねり、北〜北西の風が合う。東よりのうねりもよく拾う（10/4の実況）。広い砂浜で場所を選びやすい。'},
   {id:'loco',  name:'ロコ',         area:'irago',    w:0, s:0, face:160, sw:[112,203], gain:.8, wrap:.08, shelter:[[200,285]], tide:'any', level:1, sure:true, note:'赤羽根港の東側。堤防が西よりの風を弱める。堤防ぎわは沖へ出る流れに注意。'},
-  {id:'minato',name:'港（大松）',   area:'irago',    w:0, s:0, face:160, sw:[112,203], gain:.4, wrap:.08, shelter:[[200,285]], tide:'any', level:1, sure:true, note:'赤羽根港の西側。地形が決まると掘れた速い波。'},
   {id:'zen',   name:'全日本',       area:'irago',    w:0, s:0, face:165, sw:[112,248], gain:.7, wrap:.08, shelter:[],          tide:'any', level:0, sure:true, note:'南東〜南西のうねり、北〜北西の風が合う。砂浜で波はやさしめ。'},
   {id:'shin',  name:'新日本',       area:'irago',    w:0, s:0, face:160, sw:[130,203], gain:1,  wrap:.08, shelter:[],          tide:'any', level:0, sure:true, note:'南東〜南のうねり、北〜北西の風が合う。東よりのうねりはロングビーチより小さめ（10/4の実況）。'},
   {id:'sentan',name:'先端',         area:'irago',    w:0, s:0, face:265, sw:[112,203], gain:.6, wrap:.2,  shelter:[],          tide:'low', level:1, sure:true, note:'東風がオフショア。南東〜南のうねりと引き潮が合う。流れがあり、混みやすい。'},
@@ -182,7 +181,8 @@ const SPOTS = [
   {id:'shizu', name:'静波',         area:'shizuoka', w:2, s:1, face:155, sw:[67,203],  gain:.8, wrap:.08, shelter:[],          tide:'any', level:0, sure:true, note:'東〜南のうねり、北〜北西の風が合う。駿河湾の中で、ふだんは外海より小さめ。'},
   {id:'kata',  name:'片浜',         area:'shizuoka', w:2, s:1, face:140, sw:[67,203],  gain:1,  wrap:.08, shelter:[],          tide:'any', level:1, sure:true, note:'東〜南のうねり、北〜西の風が合う。南東うねりで大きくなりやすい。'},
   // 内海は伊勢湾の中。湾の中の波の予報は目が粗く当たりにくいので sure:false（実況で直す）
-  {id:'utsumi',name:'内海',        area:'chita',    w:3, s:2, face:225, sw:[160,290], gain:.8, wrap:.08, shelter:[],          tide:'any', level:0, sure:false, note:'伊勢湾の中。ふだんは波がなく、台風や強い低気圧のうねりが湾に入った時や、強い西風の時だけ立つ。北東の風が合う。遠浅で初心者向き。'}
+  // 10/6の実況：外海が3m・周期15秒前後の台風うねりの日に、内海はコシで○（南知多は北西7m）。サイズの計算は合っていたので、北西の風を弱める設定だけ足した
+  {id:'utsumi',name:'内海',        area:'chita',    w:3, s:2, face:225, sw:[160,290], gain:.8, wrap:.08, shelter:[[290,345]], tide:'any', level:0, sure:false, note:'伊勢湾の中。ふだんは波がなく、台風の大きくて周期の長いうねりが湾に入った時や、強い西風の時だけ立つ（10/6は外海3m・周期15秒でコシ）。北東の風が合い、北西の風も当たりにくい。遠浅で初心者向き。'}
 ];
 const WIND_PTS = [[34.59,137.08],[34.60,138.22],[34.74,138.23],[34.74,136.87]];
 const WIND_NAMES = ['伊良湖', '御前崎', '静波', '内海'];
@@ -293,7 +293,7 @@ function judge(sp, h, level){
   else if (a >= 70)  { type = 'サイド（横風）'; windScore = ws < 4 ? .7 : ws < 7 ? .45 : .25; }
   else { type = 'オンショア'; windScore = ws < 3 ? .7 : ws < 5 ? .4 : ws < 8 ? .2 : .1; }
   r.windType = type;
-  r.reasons.push(`風：${dirName(h.windDir)} ${h.wind.toFixed(0)}m＝${type}${sheltered ? '（堤防で弱まる）' : ''}`);
+  r.reasons.push(`風：${dirName(h.windDir)} ${h.wind.toFixed(0)}m＝${type}${sheltered ? '（堤防や地形で当たりにくい）' : ''}`);
   // ③ 潮
   let tideMod = 1;
   const tn = {low:'引いている', mid:'中くらい', high:'満ちている'}[h.tide];
