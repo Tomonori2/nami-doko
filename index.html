@@ -152,12 +152,14 @@ footer a{color:var(--sea)}
 </main>
 <footer>
   予報データ：<a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>（CC BY 4.0）｜実測の風・注意報：出典 <a href="https://www.jma.go.jp/" target="_blank" rel="noopener">気象庁</a><br>
-  記録はこのスマホの中だけに保存されます。
+  答え合わせの記録はこのスマホの中だけに保存されます。<br>
+  使われ方を知るために、開かれた回数だけ数えています（アプリ名・版・どこから来たか・はじめてか。同じスマホは1日1回）。<br>
+  <label><input type="checkbox" id="countOff"> 回数を数えるのを止める</label>
 </footer>
 
 <script src="photos.js"></script>
 <script>
-const VERSION = 'v1.17';
+const VERSION = 'v1.18';
 
 // ───── ポイントの特徴データ（ここを直すと判定が変わる） ─────
 // face   : 海岸が向いている方角（度。北0・東90・南180・西270）＝オフショアになる風の反対側
@@ -655,6 +657,28 @@ function showStatus(msg){
 }
 
 $('ver').textContent = VERSION;
+// ───── 開かれた回数を数える（未来ノートと同じ仕組み・同じ送り先）─────
+// 送るのは「アプリ名・版・どこから来たか・開き方・はじめてか」だけ。同じスマホからは1日1回。
+// 公開ページ（tomonori2.github.io）のときだけ動く。画面の一番下のチェックで止められる。
+const COUNT_URL = 'https://script.google.com/macros/s/AKfycbxUtIrmhEC6aWCJmfzDkGBHghIoQtiGZD9vQQrsiU2hhAilfc-jATezlTBru3iOsHaOWg/exec';
+function countOpen(){
+  try {
+    const st = load('nd-count', {}), q = (new URLSearchParams(location.search).get('from') || '').replace(/[^A-Za-z0-9_.\-]/g, '').slice(0, 40);
+    if (q && !st.from) st.from = q;   // 最初に来た場所を覚えておく（あとの日もその目印で数える）
+    const today = todayJst();
+    if (location.hostname === 'tomonori2.github.io' && !st.off && st.last !== today) {
+      const used = Object.keys(localStorage).some(k => k.startsWith('nd-') && k !== 'nd-count'), isNew = !st.first && !used ? 1 : 0;
+      st.last = today; if (!st.first) st.first = today;
+      const home = matchMedia('(display-mode: standalone)').matches;
+      fetch(`${COUNT_URL}?app=nami-doko&ver=${encodeURIComponent(VERSION)}&from=${encodeURIComponent(st.from || '')}&mode=${home ? 'home' : 'browser'}&new=${isNew}`, { mode: 'no-cors', keepalive: true }).catch(() => {});
+    }
+    save('nd-count', st);
+  } catch (e) {}
+}
+$('countOff').checked = !!load('nd-count', {}).off;
+$('countOff').onchange = () => { const st = load('nd-count', {}); st.off = $('countOff').checked; save('nd-count', st); };
+
+countOpen();
 initForm();
 render();
 fetchData(false);
