@@ -1,7 +1,7 @@
 // 波どこ？ 実況と写真の受け口
 // アプリから送られた「どのポイント・何時・サイズ・ひとこと・写真」を、このスプレッドシートに1行ずつ記録する。
-// 文字の実況も写真も、届いたらすぐアプリに出る。写真を隠したい時は「写真の公開」の列を「非公開」に書きかえる。
-// 合言葉は無し（誰でも送れる）。そのかわり1日の件数に上限をつけ、変な写真はあとから隠せるようにしてある。
+// 文字の実況は届いたらすぐアプリに出る。写真は「保留」で届き、管理人が「写真の公開」の列を「公開」に書きかえたら出る。
+// 合言葉は無し（誰でも送れる）。そのかわり1日の件数に上限をつけ、写真は確認してから載せる。
 
 const SHEET = '実況';
 const SPOTS = ['long', 'loco', 'minato', 'zen', 'shin', 'sentan', 'omain', 'melon', 'shizu', 'kata', 'utsumi'];
@@ -41,7 +41,7 @@ function doPost(e) {
   if (img.length > MAX_IMG_CHARS || (img && !/^[A-Za-z0-9+/=]+$/.test(img))) return json_({ ok: false, err: 'image' });
 
   const lock = LockService.getScriptLock();
-  lock.tryLock(10000);
+  if (!lock.tryLock(10000)) return json_({ ok: false, err: 'busy' });  // 順番が回ってこなければ受けない（上限のすり抜け防止）
   try {
     const sh = ss.getSheetByName(SHEET);
     const today = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy-MM-dd');
@@ -56,13 +56,13 @@ function doPost(e) {
       fileId = file.getId();
     }
     const pred = d.pred || {};
-    sh.appendRow([new Date(), img ? '公開' : '', "'" + d.date, "'" + d.time, d.spot, int_(d.size, 9), int_(d.cond, 3),
+    sh.appendRow([new Date(), img ? '保留' : '',"'" + d.date, "'" + d.time, d.spot, int_(d.size, 9), int_(d.cond, 3),
       text_(d.memo, 60), text_(d.by, 12), fileId, int_(pred.mark + 1, 4) === '' ? '' : pred.mark, Number(pred.face) > 0 ? Math.round(pred.face * 100) / 100 : '', text_(d.ver, 8)]);
     return json_({ ok: true });
   } finally { lock.releaseLock(); }
 }
 
-// アプリに、最近14日分の実況を返す。写真IDは「公開」の行だけ返す（「非公開」に書きかえた写真は出ない）
+// アプリに、最近14日分の実況を返す。写真IDは「公開」の行だけ返す（「保留」「非公開」の写真は出ない）
 function doGet() {
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET);
   if (!sh || sh.getLastRow() < 2) return json_({ ok: true, list: [] });
