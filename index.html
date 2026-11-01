@@ -166,7 +166,7 @@ footer a{color:var(--sea)}
 
 <script src="photos.js"></script>
 <script>
-const VERSION = 'v1.21';
+const VERSION = 'v1.22';
 
 // ───── ポイントの特徴データ（ここを直すと判定が変わる） ─────
 // face   : 海岸が向いている方角（度。北0・東90・南180・西270）＝オフショアになる風の反対側
@@ -291,8 +291,10 @@ function judge(sp, h, level){
   else { sizeScore = 0; r.dangers.push('あなたのレベルには波が大きすぎる'); }
   // 伊良湖の砂浜は、カタ〜アタマを超えると風が良くても波が閉じやすい（本人の経験と 10/13 新日本の実況：
   // アプリは1.3mで◎と出したが、実際はカタ〜ムネで○。沖で一気に崩れる波だった）
+  // 11/1 の実況（ロコ・全日本ともカタ〜アタマでダンパー、△）で、カタ〜アタマの日を少し下げた
+  //   旧：[1.35, .62], [1.7, .42], [2.2, .22] → 1.45m を超えると風が理想でも○が出ない。1日分なので小さく変えた
   if (sp.area === 'irago' && r.face > 1.1) {
-    const pts = [[1.1, 1], [1.35, .62], [1.7, .42], [2.2, .22]];
+    const pts = [[1.1, 1], [1.35, .52], [1.7, .38], [2.2, .2]];
     let cap = pts[pts.length - 1][1];
     for (let i = 1; i < pts.length; i++) if (r.face <= pts[i][0]) { const [x0, y0] = pts[i - 1], [x1, y1] = pts[i]; cap = y0 + (y1 - y0) * (r.face - x0) / (x1 - x0); break; }
     if (cap < sizeScore) { sizeScore = cap; r.cautions.push('伊良湖はカタより大きいと、風が良くても波が閉じやすい'); }
