@@ -2,6 +2,8 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<!-- CSP＝このページが話してよい相手の名簿（2026-11-21 安全点検で追加）。通信先を足すときは connect-src にも足す -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://drive.google.com https://*.googleusercontent.com; media-src 'self' blob:; connect-src 'self' https://api.open-meteo.com https://marine-api.open-meteo.com https://historical-forecast-api.open-meteo.com https://www.jma.go.jp https://script.google.com https://script.googleusercontent.com; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>波どこ？ 伊良湖・静岡・知多</title>
 <meta name="description" content="今日の風とうねりから、伊良湖・静岡のどのポイントが良さそうかを◎○△×で出す無料アプリ。">
@@ -166,7 +168,7 @@ footer a{color:var(--sea)}
 
 <script src="photos.js"></script>
 <script>
-const VERSION = 'v1.24';
+const VERSION = 'v1.25';
 
 // ───── ポイントの特徴データ（ここを直すと判定が変わる） ─────
 // face   : 海岸が向いている方角（度。北0・東90・南180・西270）＝オフショアになる風の反対側

@@ -62,15 +62,46 @@ function doPost(e) {
   } finally { lock.releaseLock(); }
 }
 
+// 「非公開」にした写真は、リンクを知っていても見られないように閉じる（2026-11-21 安全点検）。
+// 届いた時点では、シートで確かめやすいよう「リンクを知っている人」のままにしている。
+// 「非公開」→ 閉じる／あとで「公開」に戻したら → 開け直す。どこまでやったかは P_ファイルID で覚える。
+function syncSharing_(rows) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(3000)) return;   // ほかの人が同じことをしていれば、今回は見送る（次の人がやる）
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const done = props.getProperties();
+    rows.forEach(function (r) {
+      const id = r[9], hide = r[1] === '非公開';
+      if (!id || !/^[A-Za-z0-9_\-]+$/.test(id)) return;
+      if (hide === (done['P_' + id] === '1')) return;
+      try {
+        DriveApp.getFileById(id).setSharing(hide ? DriveApp.Access.PRIVATE : DriveApp.Access.ANYONE_WITH_LINK, hide ? DriveApp.Permission.NONE : DriveApp.Permission.VIEW);
+        if (hide) props.setProperty('P_' + id, '1'); else props.deleteProperty('P_' + id);
+      } catch (e) {}   // 手で消したファイルなどは飛ばす
+    });
+  } finally { lock.releaseLock(); }
+}
+
+// ひとこと・名前に、電話番号・URL・メールアドレスらしい文字があれば、アプリには出さない（2026-11-21 安全点検）。
+// 文字の実況は確認なしですぐ出るので、他人の連絡先や宣伝が載るのを防ぐ。シートには残るので管理人は見られる。
+// 全角は半角にそろえてから見る。電話番号は「区切りを外して数字が10けた以上」（日付の 2026-11-21 は8けたなので出る）
+const CONTACT_LIKE = /https?:|www\.|[a-z0-9._%+\-]+@|\.(com|jp|net|org|info|xyz)\b|line\s*id/i;
+function safeText_(s) {
+  const t = String(s || '').normalize('NFKC');
+  return CONTACT_LIKE.test(t) || /\d{10,}/.test(t.replace(/[\s\-ー‐()]/g, '')) ? '' : s;
+}
+
 // アプリに、最近14日分の実況を返す。写真IDは「公開」の行だけ返す（「保留」「非公開」の写真は出ない）
 function doGet() {
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET);
   if (!sh || sh.getLastRow() < 2) return json_({ ok: true, list: [] });
   const rows = sh.getRange(2, 1, sh.getLastRow() - 1, HEAD.length).getDisplayValues()
     .map(function (r) { r[2] = r[2].replace(/^'/, ''); r[3] = r[3].replace(/^'/, ''); return r; });
+  syncSharing_(rows);
   const since = Utilities.formatDate(new Date(Date.now() - 14 * 864e5), 'Asia/Tokyo', 'yyyy-MM-dd');
   const list = rows.filter(function (r) { return r[2] >= since && SPOTS.indexOf(r[4]) >= 0; }).slice(-80).map(function (r) {
-    return { date: r[2], time: r[3], spot: r[4], size: r[5], cond: r[6], memo: r[7], by: r[8],
+    return { date: r[2], time: r[3], spot: r[4], size: r[5], cond: r[6], memo: safeText_(r[7]), by: safeText_(r[8]),
       img: r[1] === '公開' && /^[A-Za-z0-9_\-]+$/.test(r[9]) ? r[9] : '', hold: r[1] === '保留', predMark: r[10], predFace: r[11] };
   });
   return json_({ ok: true, list: list });
